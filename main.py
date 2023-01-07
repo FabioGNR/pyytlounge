@@ -41,7 +41,9 @@ def parse_event_chunks(iter: Iterator[str]) -> Tuple[str, dict]:
 
 def process_event(id, type, args):
     if type == "onStateChange" or type == "nowPlaying":
-        state = State(args[0]["state"])
+        data = args[0]
+        if "state" in data:
+            state = State(data["state"])
         print(f"New state {state}")
     elif print_unknown_events:
         print(f"{id} {type} {args}")
