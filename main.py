@@ -21,6 +21,7 @@ class State(str, Enum):
     Stopped='-1',
     Paused='1',
     Playing='2',
+    Starting='3', # unsure, only seen once
 
 
 def parse_event_chunks(iter: Iterator[str]) -> Tuple[str, dict]:
