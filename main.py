@@ -5,23 +5,16 @@ import json
 from typing import Tuple, Iterator
 from enum import Enum
 from variables import Variables
-
-pairing_code = Variables.pairing_code
+from api import api_base
+import logging
 
 device_name = 'pyytlounge'
 screen_id = Variables.screen_id
 lounge_token = Variables.lounge_token
-api_base = "https://www.youtube.com/api/lounge"
 
 # useful for extending support
 print_unknown_events = False
 
-# initial paring with code
-# res = requests.post("f"{api_base}/pairing/get_screen", data={'pairing_code': pairing_code})
-# print(res.content)
-
-# refresh pairing from code
-# res = requests.post("f"{api_base}/pairing/get_lounge_token_batch", data={'screen_ids': screen_id})
 
 # todo: replace with string enum with new python
 class State(str, Enum):
