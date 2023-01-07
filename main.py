@@ -44,7 +44,7 @@ def process_event(id, type, args):
         data = args[0]
         if "state" in data:
             state = State(data["state"])
-        print(f"New state {state}")
+            print(f"New state {state}")
     elif print_unknown_events:
         print(f"{id} {type} {args}")
 
@@ -119,8 +119,8 @@ def connect():
                     print(f"New gsession {gsession}")
             if not sid or not gsession:
                 raise Exception(f"Missing something: sid {sid} gsession {gsession}")
-        except Exception as ex:
-            print(ex)
+        except Exception:
+            logging.exception("Exception while listening for events")
             sleep(2)
 
 
