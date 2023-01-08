@@ -1,0 +1,22 @@
+[project]
+name = "pyytlounge"
+version = "0.0.1"
+authors = [
+  { name="Fabio", email="example@example.com" },
+]
+description = "YouTube Lounge API wrapper"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/pypa/sampleproject"
+"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
