@@ -144,7 +144,7 @@ class YtLoungeApi:
                     screen_name = screen["name"]
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
-                    return True
+                    return self.__paired()
                 except Exception as ex:
                     logging.exception(ex)
                     return False
@@ -236,7 +236,7 @@ class YtLoungeApi:
                     lines = text.splitlines()
                     async for events in self.__parse_event_chunks(desync(lines)):
                         self.__process_events(events)
-                    return True
+                    return self.__connected()
                 except Exception as ex:
                     logging.exception(ex)
                     return False
