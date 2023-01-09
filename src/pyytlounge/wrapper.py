@@ -3,41 +3,106 @@
 import json
 import logging
 from enum import Enum
-from typing import AsyncIterator, List
+from typing import AsyncIterator, List, TypedDict
 
 import aiohttp
+from aiohttp import ClientTimeout
 from requests.models import PreparedRequest
 
 from .api import api_base
 
-
-async def __parse_event_chunks(lines: AsyncIterator[str]):
-    chunk_remaining = 0
-    current_chunk = ""
-    async for line in lines:
-        # todo: convert iterator at place of call
-        if line is not str:
-            line = line.decode()
-        if chunk_remaining <= 0:
-            chunk_remaining = int(line)
-            current_chunk = ""
-        else:
-            current_chunk = current_chunk + line
-            chunk_remaining = chunk_remaining - len(line) - 1
-            if chunk_remaining == 0:
-                events: List = json.loads(current_chunk)
-                yield events
-
-
 # useful for extending support
 PRINT_UNKNOWN_EVENTS = False
 
-# todo: replace with string enum with new python
-class State(str, Enum):
-    Stopped = ("-1",)
-    Paused = ("1",)
-    Playing = ("2",)
-    Starting = ("3",)  # unsure, only seen once
+
+class State(Enum):
+    Stopped = -1
+    Paused = 1
+    Playing = 2
+    Starting = 3  # unsure, only seen once
+
+
+class PlaybackStateData(TypedDict):
+    currentTime: str
+    duration: str
+    state: str
+
+
+class NowPlayingData(PlaybackStateData):
+    videoId: str
+
+
+class PlaybackState:
+    currentTime: float
+    duration: float
+    videoId: str
+    state: State
+
+    def __init__(self, state: NowPlayingData):
+        if "state" not in state:
+            self.currentTime = 0
+            self.duration = 0
+            self.videoId = ""
+            self.state = State.Stopped
+            return
+
+        self.apply_state(state)
+        self.videoId = state["videoId"]
+
+    def apply_state(self, state: PlaybackStateData):
+        self.currentTime = float(state["currentTime"])
+        self.duration = float(state["duration"])
+        self.state = State(int(state["state"]))
+
+    def __eq__(self, other):
+        return vars(self) == vars(other)
+
+    def __repr__(self):
+        return f"{self.state} - id: {self.videoId} pos: {self.currentTime} duration: {self.duration}"
+
+
+CURRENT_AUTH_VERSION = 0
+
+
+class AuthStateData(TypedDict):
+    version: int
+    screenId: str
+    loungeIdToken: str
+    refreshToken: str
+    expiry: int
+
+
+class AuthState:
+    version: int
+    screen_id: str
+    lounge_id_token: str
+    refresh_token: str
+    expiry: int
+
+    def __init__(self):
+        self.version = CURRENT_AUTH_VERSION
+
+    def serialize(self) -> AuthStateData:
+        return vars(self)
+
+    def deserialize(self, data: AuthStateData):
+        if data["version"] == CURRENT_AUTH_VERSION:
+            for key in data:
+                setattr(self, key, data[key])
+
+
+async def desync(it):
+    for x in it:
+        yield x
+
+
+async def iter_response_lines(resp):
+    while True:
+        line = await resp.readline()
+        if line:
+            yield line.decode()
+        else:
+            break
 
 
 class YtLoungeApi:
@@ -45,24 +110,25 @@ class YtLoungeApi:
 
     def __init__(self, device_name: str):
         self.device_name = device_name
-        self.screen_id = None
-        self.lounge_id_token = None
+        self.auth = AuthState()
         self.sid = None
         self.gsession = None
         self.last_event_id = None
+        self.state = State.Stopped
+        self.state_update = 0
 
     def __paired(self):
-        return self.screen_id is not None and self.lounge_id_token is not None
+        return self.auth.screen_id is not None and self.auth.lounge_id_token is not None
 
     def __connected(self):
         return self.sid is not None and self.gsession is not None
 
     def __repr__(self):
-        return f"screen_id: {self.screen_id}\
-                 lounge_id_token: {self.lounge_id_token}\
-                 sid = {self.sid}\
-                 gsession = {self.gsession}\
-                 last_event_id = {self.last_event_id}\
+        return f"screen_id: {self.auth.screen_id}\n\
+                 lounge_id_token: {self.auth.lounge_id_token}\n\
+                 sid = {self.sid}\n\
+                 gsession = {self.gsession}\n\
+                 last_event_id = {self.last_event_id}\n\
                  "
 
     async def pair(self, pairing_code) -> bool:
@@ -76,24 +142,36 @@ class YtLoungeApi:
                     screens = await resp.json()
                     screen = screens["screen"]
                     screen_name = screen["name"]
-                    self.screen_id = screen["screenId"]
-                    self.lounge_id_token = screen["loungeToken"]
+                    self.auth.screen_id = screen["screenId"]
+                    self.auth.lounge_id_token = screen["loungeToken"]
                     return True
                 except Exception as ex:
                     logging.exception(ex)
                     return False
 
-    def load(self, screen_id: str, lounge_id_token: str):
-        """Use the given screen id and lounge id token retrieved from manual pairing or discovery"""
-        self.screen_id = screen_id
-        self.lounge_id_token = lounge_id_token
+    def store_auth_state(self) -> dict:
+        return {
+            "screenId": self.auth.screen_id,
+            "lounge_id_token": self.auth.lounge_id_token,
+            "refresh_token": self.auth.refresh_token,
+        }
+
+    def load_auth_state(self, data: dict):
+        self.auth = AuthState()
+        self.auth.deserialize(data)
+
+    def __update_state(self):
+        self.state_update = self.state_update + 1
 
     def __process_event(self, event_id: int, event_type: str, args):
-        if event_type in ("onStateChange", "nowPlaying"):
+        if event_type == "onStateChange":
             data = args[0]
-            if "state" in data:
-                state = State(data["state"])
-                print(f"New state {state}")
+            self.state.apply_state(data)
+            self.__update_state()
+        elif event_type == "nowPlaying":
+            data = args[0]
+            self.state = PlaybackState(data)
+            self.__update_state()
         elif PRINT_UNKNOWN_EVENTS:
             print(f"{event_id} {event_type} {args}")
 
@@ -113,6 +191,22 @@ class YtLoungeApi:
         self.gsession = gsession
         self.last_event_id = last_id
 
+    async def __parse_event_chunks(self, lines: AsyncIterator[str]):
+        chunk_remaining = 0
+        current_chunk = ""
+        async for line in lines:
+            if chunk_remaining <= 0:
+                chunk_remaining = int(line)
+                current_chunk = ""
+            else:
+                line = line.replace("\n", "")
+                current_chunk = current_chunk + line
+                chunk_remaining = chunk_remaining - len(line) - 1
+
+                if chunk_remaining == 0:
+                    events: List = json.loads(current_chunk)
+                    yield events
+
     async def connect(self) -> bool:
         """Attempt to connect using the previously set tokens"""
         if not self.__paired():
@@ -122,7 +216,7 @@ class YtLoungeApi:
             "app": "web",
             "mdx-version": "3",
             "name": self.device_name,
-            "id": self.screen_id,
+            "id": self.auth.screen_id,
             "device": "REMOTE_CONTROL",
             "capabilities": "que,dsdtr,atp",
             "method": "setPlaylist",
@@ -130,16 +224,17 @@ class YtLoungeApi:
             "ui": "",
             "deviceContext": "user_agent=dunno&window_width_points=&window_height_points=&os_name=android&ms=",
             "theme": "cl",
-            "loungeIdToken": self.lounge_id_token,
+            "loungeIdToken": self.auth.lounge_id_token,
         }
         connect_url = (
             f"{api_base}/bc/bind?RID=1&VER=8&CVER=1&auth_failure_option=send_error"
         )
         async with aiohttp.ClientSession() as session:
-            async with session.post(connect_url, connect_body) as resp:
+            async with session.post(url=connect_url, data=connect_body) as resp:
                 try:
-                    lines = await resp.text().splitlines()
-                    async for events in __parse_event_chunks(lines):
+                    text = await resp.text()
+                    lines = text.splitlines()
+                    async for events in self.__parse_event_chunks(desync(lines)):
                         self.__process_events(events)
                     return True
                 except Exception as ex:
@@ -156,7 +251,7 @@ class YtLoungeApi:
             "device": "REMOTE_CONTROL",
             "name": self.device_name,
             "app": "youtube-desktop",
-            "loungeIdToken": self.lounge_id_token,
+            "loungeIdToken": self.auth.lounge_id_token,
             "VER": "8",
             "v": "2",
             "RID": "rpc",
@@ -168,7 +263,12 @@ class YtLoungeApi:
         }
         req = PreparedRequest()
         req.prepare_url(f"{api_base}/bc/bind", params)
-        async with aiohttp.ClientSession() as session:
-            async with session.get(req.url, stream=True) as resp:
-                async for events in __parse_event_chunks(resp.iter_lines()):
+        async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
+            async with session.get(req.url) as resp:
+                async for events in self.__parse_event_chunks(
+                    iter_response_lines(resp.content)
+                ):
+                    pre_state_update = self.state_update
                     self.__process_events(events)
+                    if pre_state_update != self.state_update:
+                        yield self.state

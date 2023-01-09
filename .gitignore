@@ -2,3 +2,4 @@
 __pycache__
 variables.py
 dist/
+auth_state
