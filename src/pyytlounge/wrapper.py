@@ -17,8 +17,8 @@ PRINT_UNKNOWN_EVENTS = False
 
 class State(Enum):
     Stopped = -1
-    Paused = 1
-    Playing = 2
+    Playing = 1
+    Paused = 2
     Starting = 3  # unsure, only seen once
 
 
@@ -40,8 +40,8 @@ class PlaybackState:
 
     def __init__(self, state: NowPlayingData):
         if "state" not in state:
-            self.currentTime = 0
-            self.duration = 0
+            self.currentTime = 0.0
+            self.duration = 0.0
             self.videoId = ""
             self.state = State.Stopped
             return
