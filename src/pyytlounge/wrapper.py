@@ -3,7 +3,7 @@
 import json
 import logging
 from enum import Enum
-from typing import AsyncIterator, List, TypedDict
+from typing import AsyncIterator, List, TypedDict, Union
 
 import aiohttp
 from aiohttp import ClientTimeout
@@ -38,8 +38,8 @@ class PlaybackState:
     videoId: str
     state: State
 
-    def __init__(self, state: NowPlayingData):
-        if "state" not in state:
+    def __init__(self, state: Union[NowPlayingData, None] = None):
+        if not state or "state" not in state:
             self.currentTime = 0.0
             self.duration = 0.0
             self.videoId = ""
@@ -111,25 +111,34 @@ class YtLoungeApi:
     def __init__(self, device_name: str):
         self.device_name = device_name
         self.auth = AuthState()
-        self.sid = None
-        self.gsession = None
-        self.last_event_id = None
-        self.state = State.Stopped
+        self._sid = None
+        self._gsession = None
+        self._last_event_id = None
+        self.state = PlaybackState()
         self.state_update = 0
+        self._screen_name = None
 
     def __paired(self):
         return self.auth.screen_id is not None and self.auth.lounge_id_token is not None
 
     def __connected(self):
-        return self.sid is not None and self.gsession is not None
+        return self._sid is not None and self._gsession is not None
 
     def __repr__(self):
         return f"screen_id: {self.auth.screen_id}\n\
                  lounge_id_token: {self.auth.lounge_id_token}\n\
-                 sid = {self.sid}\n\
-                 gsession = {self.gsession}\n\
-                 last_event_id = {self.last_event_id}\n\
+                 sid = {self._sid}\n\
+                 gsession = {self._gsession}\n\
+                 last_event_id = {self._last_event_id}\n\
                  "
+
+    @property
+    def screen_name(self) -> str:
+        """Returns screen name as returned by YouTube"""
+        if not self.__paired():
+            raise Exception("Not paired")
+
+        return self._screen_name
 
     async def pair(self, pairing_code) -> bool:
         """Pair with a device using a manual input pairing code"""
@@ -141,7 +150,7 @@ class YtLoungeApi:
                 try:
                     screens = await resp.json()
                     screen = screens["screen"]
-                    screen_name = screen["name"]
+                    self._screen_name = screen["name"]
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
                     return self.__paired()
@@ -187,9 +196,9 @@ class YtLoungeApi:
                 self.__process_event(event_id, event_type, args)
 
         last_id = events[-1][0]
-        self.sid = sid
-        self.gsession = gsession
-        self.last_event_id = last_id
+        self._sid = sid
+        self._gsession = gsession
+        self._last_event_id = last_id
 
     async def __parse_event_chunks(self, lines: AsyncIterator[str]):
         chunk_remaining = 0
@@ -241,12 +250,14 @@ class YtLoungeApi:
                     logging.exception(ex)
                     return False
 
-    async def listen_events(self):
+    async def listen_events(self) -> PlaybackState:
         """Start listening for events"""
         if not self.__connected():
             raise Exception("Not connected")
 
-        print(f"Start listening with {self.sid}, {self.gsession}, {self.last_event_id}")
+        print(
+            f"Start listening with {self._sid}, {self._gsession}, {self._last_event_id}"
+        )
         params = {
             "device": "REMOTE_CONTROL",
             "name": self.device_name,
@@ -255,10 +266,10 @@ class YtLoungeApi:
             "VER": "8",
             "v": "2",
             "RID": "rpc",
-            "SID": self.sid,
+            "SID": self._sid,
             "CI": "0",
-            "AID": self.last_event_id,
-            "gsessionid": self.gsession,
+            "AID": self._last_event_id,
+            "gsessionid": self._gsession,
             "TYPE": "xmlhttp",
         }
         req = PreparedRequest()
