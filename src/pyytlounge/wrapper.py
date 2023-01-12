@@ -216,6 +216,25 @@ class YtLoungeApi:
                     events: List = json.loads(current_chunk)
                     yield events
 
+    async def is_available(self) -> bool:
+        """Asks YouTube API if the screen is available.
+        Must be paired prior to this."""
+
+        if not self.__paired():
+            raise Exception("Not connected")
+
+        body = {"lounge_token": self.auth.lounge_id_token}
+
+        url = f"{api_base}/pairing/get_screen_availability"
+
+        async with aiohttp.ClientSession() as session:
+            result = await session.post(url=url, data=body)
+            status = await result.json()
+            if "screens" in status and len(status["screens"]) > 0:
+                return status["screens"][0]["status"] == "online"
+
+            return False
+
     async def connect(self) -> bool:
         """Attempt to connect using the previously set tokens"""
         if not self.__paired():

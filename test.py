@@ -26,6 +26,9 @@ async def go():
         with open(AUTH_STATE_FILE, "w") as f:
             f.write(str(auth_state))
     print(api)
+    is_available = await api.is_available()
+    print(f"is available: {is_available}")
+
     print("Connecting...")
     connected = await api.connect()
     print(connected and "success" or "failed")
