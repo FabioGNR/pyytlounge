@@ -17,6 +17,7 @@ PRINT_UNKNOWN_EVENTS = False
 
 class State(Enum):
     Stopped = -1
+    Buffering = 0  # unsure, happens between videos
     Playing = 1
     Paused = 2
     Starting = 3  # unsure, only seen once
