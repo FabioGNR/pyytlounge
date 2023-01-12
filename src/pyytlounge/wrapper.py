@@ -106,6 +106,11 @@ async def iter_response_lines(resp):
             break
 
 
+def get_thumbnail_url(video_id: str, thumbnail_idx=0) -> str:
+    """Returns thumbnail for given video. Use thumbnail idx to get different thumbnails."""
+    return f"https://img.youtube.com/vi/{video_id}/{thumbnail_idx}.jpg"
+
+
 class YtLoungeApi:
     """Wrapper class for YouTube Lounge API"""
 
@@ -235,6 +240,13 @@ class YtLoungeApi:
                 return status["screens"][0]["status"] == "online"
 
             return False
+
+    def get_thumbnail_url(self, thumbnail_idx=0) -> str:
+        """Returns thumbnail for current video. Use thumbnail idx to get different thumbnails.
+        Returns None if no video is set."""
+        if not self.state.videoId:
+            return None
+        return get_thumbnail_url(self.state.videoId, thumbnail_idx)
 
     async def connect(self) -> bool:
         """Attempt to connect using the previously set tokens"""
