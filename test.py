@@ -3,6 +3,8 @@ from pyytlounge import YtLoungeApi
 from ast import literal_eval
 import os
 
+from pyytlounge.wrapper import PlaybackState
+
 AUTH_STATE_FILE = "auth_state"
 
 
@@ -29,9 +31,12 @@ async def go():
     print(connected and "success" or "failed")
     if not connected:
         exit()
-    async for state in api.listen_events():
+
+    async def receive_state(state: PlaybackState):
         print(f"New state: {state}")
         print(f"Image should be at: https://img.youtube.com/vi/{state.videoId}/0.jpg")
+
+    await api.subscribe(receive_state)
 
 
 asyncio.run(go())

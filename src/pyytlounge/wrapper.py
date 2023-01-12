@@ -3,7 +3,7 @@
 import json
 import logging
 from enum import Enum
-from typing import AsyncIterator, List, TypedDict, Union
+from typing import Any, AsyncIterator, List, TypedDict, Union, Callable
 
 import aiohttp
 from aiohttp import ClientTimeout
@@ -250,7 +250,7 @@ class YtLoungeApi:
                     logging.exception(ex)
                     return False
 
-    async def listen_events(self) -> PlaybackState:
+    async def subscribe(self, callback: Callable[PlaybackState, Any]) -> None:
         """Start listening for events"""
         if not self.__connected():
             raise Exception("Not connected")
@@ -282,4 +282,4 @@ class YtLoungeApi:
                     pre_state_update = self.state_update
                     self.__process_events(events)
                     if pre_state_update != self.state_update:
-                        yield self.state
+                        await callback(self.state)
