@@ -287,9 +287,6 @@ class YtLoungeApi:
         if not self.__connected():
             raise Exception("Not connected")
 
-        print(
-            f"Start listening with {self._sid}, {self._gsession}, {self._last_event_id}"
-        )
         params = {
             "device": "REMOTE_CONTROL",
             "name": self.device_name,
