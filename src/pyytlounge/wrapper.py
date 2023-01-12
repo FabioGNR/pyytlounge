@@ -92,6 +92,23 @@ class AuthState:
                 setattr(self, key, data[key])
 
 
+class __DeviceInfo(TypedDict):
+    brand: str
+    model: str
+    os: str
+
+
+class __Device(TypedDict):
+    name: str
+    type: str
+    id: str
+    deviceInfo: str  # json string
+
+
+class __LoungeStatus(TypedDict):
+    devices: str  # json string containing list of __Device
+
+
 async def desync(it):
     for x in it:
         yield x
@@ -122,7 +139,8 @@ class YtLoungeApi:
         self._last_event_id = None
         self.state = PlaybackState()
         self.state_update = 0
-        self._screen_name = None
+        self.__screen_name: str = None
+        self.__device_info: __DeviceInfo = None
 
     def __paired(self):
         return self.auth.screen_id is not None and self.auth.lounge_id_token is not None
@@ -144,7 +162,16 @@ class YtLoungeApi:
         if not self.__paired():
             raise Exception("Not paired")
 
-        return self._screen_name
+        return self.__screen_name
+
+    @property
+    def screen_device_name(self) -> str:
+        """Returns device name built from device info returned by YouTube"""
+        if not self.__connected():
+            raise Exception("Not connected")
+        brand = self.__device_info["brand"]
+        model = self.__device_info["model"]
+        return f"{brand} {model}"
 
     async def pair(self, pairing_code) -> bool:
         """Pair with a device using a manual input pairing code"""
@@ -156,7 +183,7 @@ class YtLoungeApi:
                 try:
                     screens = await resp.json()
                     screen = screens["screen"]
-                    self._screen_name = screen["name"]
+                    self.__screen_name = screen["name"]
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
                     return self.__paired()
@@ -187,8 +214,16 @@ class YtLoungeApi:
             data = args[0]
             self.state = PlaybackState(data)
             self.__update_state()
+        elif event_type == "loungeStatus":
+            data: __LoungeStatus = args[0]
+            devices: List[__Device] = json.loads(data["devices"])
+            for device in devices:
+                if device["type"] == "LOUNGE_SCREEN":
+                    self.__screen_name = device["name"]
+                    self.__device_info = json.loads(device["deviceInfo"])
+                    break
         elif PRINT_UNKNOWN_EVENTS:
-            print(f"{event_id} {event_type} {args}")
+            print(event_id, event_type, args)
 
     def __process_events(self, events):
         sid, gsession = None, None
