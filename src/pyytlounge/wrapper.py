@@ -226,19 +226,16 @@ class YtLoungeApi:
             print(event_id, event_type, args)
 
     def __process_events(self, events):
-        sid, gsession = None, None
         for event in events:
             event_id, (event_type, *args) = event
             if event_type == "c":
-                sid = args[0]
+                self._sid = args[0]
             elif event_type == "S":
-                gsession = args[0]
+                self._gsession = args[0]
             else:
                 self.__process_event(event_id, event_type, args)
 
         last_id = events[-1][0]
-        self._sid = sid
-        self._gsession = gsession
         self._last_event_id = last_id
 
     async def __parse_event_chunks(self, lines: AsyncIterator[str]):
