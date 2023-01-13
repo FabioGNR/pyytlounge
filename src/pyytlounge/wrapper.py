@@ -349,11 +349,16 @@ class YtLoungeApi:
                     if pre_state_update != self.state_update:
                         await callback(self.state)
 
-    async def __command(self, command: str) -> bool:
+    async def __command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.__connected():
             raise Exception("Not connected")
 
         command_body = {"count": 1, "ofs": self._command_offset, "req0__sc": command}
+        if command_parameters:
+            for cmd_param in command_parameters:
+                value = command_parameters[cmd_param]
+                command_body[f"req0_{cmd_param}"] = value
+
         self._command_offset += 1
         params = {
             "device": "REMOTE_CONTROL",
@@ -389,3 +394,15 @@ class YtLoungeApi:
     async def pause(self) -> bool:
         """Sends pause command to screen"""
         return await self.__command("pause")
+
+    async def previous(self) -> bool:
+        """Sends previous command to screen"""
+        return await self.__command("previous")
+
+    async def next(self) -> bool:
+        """Sends next command to screen"""
+        return await self.__command("next")
+
+    async def seek_to(self, time: float) -> bool:
+        """Seek to given time (seconds)"""
+        return await self.__command("seekTo", {"newTime": time})
