@@ -192,6 +192,7 @@ class YtLoungeApi:
                     return False
 
     def store_auth_state(self) -> dict:
+        """Return auth parameters as dict which can be serialized for later use"""
         return {
             "screenId": self.auth.screen_id,
             "lounge_id_token": self.auth.lounge_id_token,
@@ -199,6 +200,7 @@ class YtLoungeApi:
         }
 
     def load_auth_state(self, data: dict):
+        """Use deserialized auth parameters"""
         self.auth = AuthState()
         self.auth.deserialize(data)
 
