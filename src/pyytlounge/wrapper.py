@@ -316,7 +316,7 @@ class YtLoungeApi:
                     logging.exception(ex)
                     return False
 
-    async def subscribe(self, callback: Callable[PlaybackState, Any]) -> None:
+    async def subscribe(self, callback: Callable[[PlaybackState], Any]) -> None:
         """Start listening for events"""
         if not self.__connected():
             raise Exception("Not connected")
