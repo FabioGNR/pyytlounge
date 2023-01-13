@@ -139,6 +139,7 @@ class YtLoungeApi:
         self._last_event_id = None
         self.state = PlaybackState()
         self.state_update = 0
+        self._command_offset = 1
         self.__screen_name: str = None
         self.__device_info: __DeviceInfo = None
 
@@ -311,6 +312,7 @@ class YtLoungeApi:
                     lines = text.splitlines()
                     async for events in self.__parse_event_chunks(desync(lines)):
                         self.__process_events(events)
+                    self._command_offset = 1
                     return self.__connected()
                 except Exception as ex:
                     logging.exception(ex)
@@ -346,3 +348,45 @@ class YtLoungeApi:
                     self.__process_events(events)
                     if pre_state_update != self.state_update:
                         await callback(self.state)
+
+    async def __command(self, command: str) -> bool:
+        if not self.__connected():
+            raise Exception("Not connected")
+
+        command_body = {"count": 1, "ofs": self._command_offset, "req0__sc": command}
+        self._command_offset += 1
+        params = {
+            "device": "REMOTE_CONTROL",
+            "name": self.device_name,
+            "app": "youtube-desktop",
+            "mdxVersion": 3,
+            "loungeIdToken": self.auth.lounge_id_token,
+            "VER": "8",
+            "v": "2",
+            "RID": self._command_offset,
+            "SID": self._sid,
+            "AID": self._last_event_id,
+            "gsessionid": self._gsession,
+        }
+        req = PreparedRequest()
+        req.prepare_url(f"{api_base}/bc/bind", params)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url=req.url, data=command_body) as resp:
+                try:
+                    text = await resp.text()
+                    lines = text.splitlines()
+                    print(lines)
+                    async for events in self.__parse_event_chunks(desync(lines)):
+                        print(events)
+                    return True
+                except Exception as ex:
+                    logging.exception(ex)
+                    return False
+
+    async def play(self) -> bool:
+        """Sends play command to screen"""
+        return await self.__command("play")
+
+    async def pause(self) -> bool:
+        """Sends pause command to screen"""
+        return await self.__command("pause")
