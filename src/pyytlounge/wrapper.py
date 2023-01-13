@@ -359,7 +359,6 @@ class YtLoungeApi:
             "device": "REMOTE_CONTROL",
             "name": self.device_name,
             "app": "youtube-desktop",
-            "mdxVersion": 3,
             "loungeIdToken": self.auth.lounge_id_token,
             "VER": "8",
             "v": "2",
