@@ -377,11 +377,7 @@ class YtLoungeApi:
         async with aiohttp.ClientSession() as session:
             async with session.post(url=req.url, data=command_body) as resp:
                 try:
-                    text = await resp.text()
-                    lines = text.splitlines()
-                    print(lines)
-                    async for events in self.__parse_event_chunks(desync(lines)):
-                        print(events)
+                    resp.raise_for_status()
                     return True
                 except Exception as ex:
                     logging.exception(ex)
