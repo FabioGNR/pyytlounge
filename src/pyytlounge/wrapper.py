@@ -143,10 +143,12 @@ class YtLoungeApi:
         self.__screen_name: str = None
         self.__device_info: __DeviceInfo = None
 
-    def __paired(self):
+    def paired(self) -> bool:
+        """Returns true if screen id and lounge id token are known."""
         return self.auth.screen_id is not None and self.auth.lounge_id_token is not None
 
-    def __connected(self):
+    def connected(self) -> bool:
+        """Returns true if the screen's session is connected."""
         return self._sid is not None and self._gsession is not None
 
     def __repr__(self):
@@ -160,7 +162,7 @@ class YtLoungeApi:
     @property
     def screen_name(self) -> str:
         """Returns screen name as returned by YouTube"""
-        if not self.__paired():
+        if not self.paired():
             raise Exception("Not paired")
 
         return self.__screen_name
@@ -168,7 +170,7 @@ class YtLoungeApi:
     @property
     def screen_device_name(self) -> str:
         """Returns device name built from device info returned by YouTube"""
-        if not self.__connected():
+        if not self.connected():
             raise Exception("Not connected")
         brand = self.__device_info["brand"]
         model = self.__device_info["model"]
@@ -187,7 +189,7 @@ class YtLoungeApi:
                     self.__screen_name = screen["name"]
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
-                    return self.__paired()
+                    return self.paired()
                 except Exception as ex:
                     logging.exception(ex)
                     return False
@@ -267,7 +269,7 @@ class YtLoungeApi:
         """Asks YouTube API if the screen is available.
         Must be paired prior to this."""
 
-        if not self.__paired():
+        if not self.paired():
             raise Exception("Not connected")
 
         body = {"lounge_token": self.auth.lounge_id_token}
@@ -291,7 +293,7 @@ class YtLoungeApi:
 
     async def connect(self) -> bool:
         """Attempt to connect using the previously set tokens"""
-        if not self.__paired():
+        if not self.paired():
             raise Exception("Not paired")
 
         connect_body = {
@@ -319,14 +321,14 @@ class YtLoungeApi:
                     async for events in self.__parse_event_chunks(desync(lines)):
                         self.__process_events(events)
                     self._command_offset = 1
-                    return self.__connected()
+                    return self.connected()
                 except Exception as ex:
                     logging.exception(ex)
                     return False
 
     async def subscribe(self, callback: Callable[[PlaybackState], Any]) -> None:
         """Start listening for events"""
-        if not self.__connected():
+        if not self.connected():
             raise Exception("Not connected")
 
         params = {
@@ -356,7 +358,7 @@ class YtLoungeApi:
                         await callback(self.state)
 
     async def __command(self, command: str, command_parameters: dict = None) -> bool:
-        if not self.__connected():
+        if not self.connected():
             raise Exception("Not connected")
 
         command_body = {"count": 1, "ofs": self._command_offset, "req0__sc": command}
