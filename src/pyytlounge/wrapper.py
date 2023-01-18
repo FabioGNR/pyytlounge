@@ -356,6 +356,8 @@ class YtLoungeApi:
                     self.__process_events(events)
                     if pre_state_update != self.state_update:
                         await callback(self.state)
+                    if not self.connected():
+                        break
 
     async def __command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
