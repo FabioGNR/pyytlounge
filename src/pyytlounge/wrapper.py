@@ -208,6 +208,10 @@ class YtLoungeApi:
     def __update_state(self):
         self.state_update = self.state_update + 1
 
+    def __connection_lost(self):
+        self._sid = None
+        self._gsession = None
+
     def __process_event(self, event_id: int, event_type: str, args):
         if event_type == "onStateChange":
             data = args[0]
@@ -225,6 +229,8 @@ class YtLoungeApi:
                     self.__screen_name = device["name"]
                     self.__device_info = json.loads(device["deviceInfo"])
                     break
+        elif event_type == "loungeScreenDisconnected":
+            self.__connection_lost()
         elif PRINT_UNKNOWN_EVENTS:
             print(event_id, event_type, args)
 
@@ -377,6 +383,9 @@ class YtLoungeApi:
         async with aiohttp.ClientSession() as session:
             async with session.post(url=req.url, data=command_body) as resp:
                 try:
+                    if resp.status == 400 and "Unknown SID" in resp.text():
+                        self.__connection_lost()
+                        return False
                     resp.raise_for_status()
                     return True
                 except Exception as ex:
