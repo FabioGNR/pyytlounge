@@ -145,7 +145,11 @@ class YtLoungeApi:
 
     def paired(self) -> bool:
         """Returns true if screen id and lounge id token are known."""
-        return self.auth.screen_id is not None and self.auth.lounge_id_token is not None
+        return self.auth.screen_id is not None
+
+    def linked(self) -> bool:
+        """Returns true if paired and lounge id token is known."""
+        return self.paired() and self.auth.lounge_id_token is not None
 
     def connected(self) -> bool:
         """Returns true if the screen's session is connected."""
@@ -162,8 +166,8 @@ class YtLoungeApi:
     @property
     def screen_name(self) -> str:
         """Returns screen name as returned by YouTube"""
-        if not self.paired():
-            raise Exception("Not paired")
+        if not self.linked():
+            raise Exception("Not linked")
 
         return self.__screen_name
 
@@ -189,7 +193,27 @@ class YtLoungeApi:
                     self.__screen_name = screen["name"]
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
-                    return self.paired()
+                    return self.linked()
+                except Exception as ex:
+                    logging.exception(ex)
+                    return False
+
+    async def refresh_auth(self) -> bool:
+        """Refresh lounge token using stored refresh token."""
+        if not self.paired():
+            raise Exception("Must be paired")
+
+        async with aiohttp.ClientSession() as session:
+            refresh_url = f"{api_base}/pairing/get_lounge_token_batch"
+            refresh_data = {"screen_ids": self.auth.screen_id}
+            async with session.post(url=refresh_url, data=refresh_data) as resp:
+                try:
+                    screens = await resp.json()
+                    screen = screens["screens"][0]
+                    self.auth.screen_id = screen["screenId"]
+                    self.auth.lounge_id_token = screen["loungeToken"]
+
+                    return self.linked()
                 except Exception as ex:
                     logging.exception(ex)
                     return False
@@ -267,9 +291,9 @@ class YtLoungeApi:
 
     async def is_available(self) -> bool:
         """Asks YouTube API if the screen is available.
-        Must be paired prior to this."""
+        Must be linked prior to this."""
 
-        if not self.paired():
+        if not self.linked():
             raise Exception("Not connected")
 
         body = {"lounge_token": self.auth.lounge_id_token}
@@ -293,8 +317,8 @@ class YtLoungeApi:
 
     async def connect(self) -> bool:
         """Attempt to connect using the previously set tokens"""
-        if not self.paired():
-            raise Exception("Not paired")
+        if not self.linked():
+            raise Exception("Not linked")
 
         connect_body = {
             "app": "web",
@@ -317,6 +341,15 @@ class YtLoungeApi:
             async with session.post(url=connect_url, data=connect_body) as resp:
                 try:
                     text = await resp.text()
+                    if resp.status == 401:
+                        self.auth.lounge_id_token = None
+                        return False
+
+                    if resp.status != 200:
+                        logging.warning(
+                            "Unknown reply to connect %i %s", resp.status, resp.reason
+                        )
+                        return False
                     lines = text.splitlines()
                     async for events in self.__parse_event_chunks(desync(lines)):
                         self.__process_events(events)
