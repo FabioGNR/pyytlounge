@@ -256,6 +256,8 @@ class YtLoungeApi:
                     self.__device_info = json.loads(device["deviceInfo"])
                     break
         elif event_type == "loungeScreenDisconnected":
+            self.state = PlaybackState()
+            self.__update_state()
             self.__connection_lost()
         elif PRINT_UNKNOWN_EVENTS:
             print(event_id, event_type, args)
