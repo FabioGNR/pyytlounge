@@ -11,9 +11,6 @@ from requests.models import PreparedRequest
 
 from .api import api_base
 
-# useful for extending support
-PRINT_UNKNOWN_EVENTS = False
-
 
 class State(Enum):
     Stopped = -1
@@ -213,6 +210,10 @@ class YtLoungeApi:
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
 
+                    logging.info(
+                        "Refreshed auth, lounge id token %s", self.auth.lounge_id_token
+                    )
+
                     return self.linked()
                 except Exception as ex:
                     logging.exception(ex)
@@ -259,8 +260,10 @@ class YtLoungeApi:
             self.state = PlaybackState()
             self.__update_state()
             self.__connection_lost()
-        elif PRINT_UNKNOWN_EVENTS:
-            print(event_id, event_type, args)
+        elif event_type == "noop":
+            pass  # no-op
+        else:
+            logging.info("Unprocessed event %s %s", event_type, args)
 
     def __process_events(self, events):
         for event in events:
@@ -382,6 +385,7 @@ class YtLoungeApi:
         }
         req = PreparedRequest()
         req.prepare_url(f"{api_base}/bc/bind", params)
+        logging.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
         async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
             async with session.get(req.url) as resp:
                 async for events in self.__parse_event_chunks(
@@ -393,6 +397,9 @@ class YtLoungeApi:
                         await callback(self.state)
                     if not self.connected():
                         break
+                logging.info(
+                    "Subscribe completed, status %i %s", resp.status, resp.reason
+                )
 
     async def __command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
