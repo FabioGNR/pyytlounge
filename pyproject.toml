@@ -1,6 +1,6 @@
 [project]
 name = "pyytlounge"
-version = "1.2.0"
+version = "1.2.1"
 authors = [
   { name="Fabio", email="example@example.com" },
 ]
