@@ -128,7 +128,7 @@ def get_thumbnail_url(video_id: str, thumbnail_idx=0) -> str:
 class YtLoungeApi:
     """Wrapper class for YouTube Lounge API"""
 
-    def __init__(self, device_name: str):
+    def __init__(self, device_name: str, logger: logging.Logger = None):
         self.device_name = device_name
         self.auth = AuthState()
         self._sid = None
@@ -139,6 +139,7 @@ class YtLoungeApi:
         self._command_offset = 1
         self.__screen_name: str = None
         self.__device_info: __DeviceInfo = None
+        self.__logger = logger or logging.Logger(__package__, logging.DEBUG)
 
     def paired(self) -> bool:
         """Returns true if screen id and lounge id token are known."""
@@ -192,7 +193,7 @@ class YtLoungeApi:
                     self.auth.lounge_id_token = screen["loungeToken"]
                     return self.linked()
                 except Exception as ex:
-                    logging.exception(ex)
+                    self.__logger.exception(ex)
                     return False
 
     async def refresh_auth(self) -> bool:
@@ -210,13 +211,13 @@ class YtLoungeApi:
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
 
-                    logging.info(
+                    self.__logger.info(
                         "Refreshed auth, lounge id token %s", self.auth.lounge_id_token
                     )
 
                     return self.linked()
                 except Exception as ex:
-                    logging.exception(ex)
+                    self.__logger.exception(ex)
                     return False
 
     def store_auth_state(self) -> dict:
@@ -263,7 +264,7 @@ class YtLoungeApi:
         elif event_type == "noop":
             pass  # no-op
         else:
-            logging.info("Unprocessed event %s %s", event_type, args)
+            self.__logger.debug("Unprocessed event %s %s", event_type, args)
 
     def __process_events(self, events):
         for event in events:
@@ -351,7 +352,7 @@ class YtLoungeApi:
                         return False
 
                     if resp.status != 200:
-                        logging.warning(
+                        self.__logger.warning(
                             "Unknown reply to connect %i %s", resp.status, resp.reason
                         )
                         return False
@@ -361,7 +362,7 @@ class YtLoungeApi:
                     self._command_offset = 1
                     return self.connected()
                 except Exception as ex:
-                    logging.exception(ex)
+                    self.__logger.exception(ex)
                     return False
 
     async def subscribe(self, callback: Callable[[PlaybackState], Any]) -> None:
@@ -385,7 +386,7 @@ class YtLoungeApi:
         }
         req = PreparedRequest()
         req.prepare_url(f"{api_base}/bc/bind", params)
-        logging.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
+        self.__logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
         async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
             async with session.get(req.url) as resp:
                 async for events in self.__parse_event_chunks(
@@ -397,7 +398,7 @@ class YtLoungeApi:
                         await callback(self.state)
                     if not self.connected():
                         break
-                logging.info(
+                self.__logger.info(
                     "Subscribe completed, status %i %s", resp.status, resp.reason
                 )
 
@@ -438,7 +439,7 @@ class YtLoungeApi:
                     resp.raise_for_status()
                     return True
                 except Exception as ex:
-                    logging.exception(ex)
+                    self.__logger.exception(ex)
                     return False
 
     async def play(self) -> bool:
