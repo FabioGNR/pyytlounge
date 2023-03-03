@@ -432,6 +432,9 @@ class YtLoungeApi:
                     if resp.status == 400 and "Unknown SID" in resp.text():
                         self.__connection_lost()
                         return False
+                    if resp.status == 410 and "Gone" in resp.text():
+                        self.__connection_lost()
+                        return False
                     resp.raise_for_status()
                     return True
                 except Exception as ex:
