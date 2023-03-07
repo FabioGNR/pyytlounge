@@ -430,10 +430,11 @@ class YtLoungeApi:
         async with aiohttp.ClientSession() as session:
             async with session.post(url=req.url, data=command_body) as resp:
                 try:
-                    if resp.status == 400 and "Unknown SID" in resp.text():
+                    response_text = await resp.text()
+                    if resp.status == 400 and "Unknown SID" in response_text:
                         self.__connection_lost()
                         return False
-                    if resp.status == 410 and "Gone" in resp.text():
+                    if resp.status == 410 and "Gone" in response_text:
                         self.__connection_lost()
                         return False
                     resp.raise_for_status()
