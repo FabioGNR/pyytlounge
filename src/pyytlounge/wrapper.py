@@ -387,20 +387,23 @@ class YtLoungeApi:
         req = PreparedRequest()
         req.prepare_url(f"{api_base}/bc/bind", params)
         self.__logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
-        async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
-            async with session.get(req.url) as resp:
-                async for events in self.__parse_event_chunks(
-                    iter_response_lines(resp.content)
-                ):
-                    pre_state_update = self.state_update
-                    self.__process_events(events)
-                    if pre_state_update != self.state_update:
-                        await callback(self.state)
-                    if not self.connected():
-                        break
-                self.__logger.info(
-                    "Subscribe completed, status %i %s", resp.status, resp.reason
-                )
+        try:
+            async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
+                async with session.get(req.url) as resp:
+                    async for events in self.__parse_event_chunks(
+                        iter_response_lines(resp.content)
+                    ):
+                        pre_state_update = self.state_update
+                        self.__process_events(events)
+                        if pre_state_update != self.state_update:
+                            await callback(self.state)
+                        if not self.connected():
+                            break
+                    self.__logger.info(
+                        "Subscribe completed, status %i %s", resp.status, resp.reason
+                    )
+        except Exception as ex:
+            self.__logger.exception(ex)
 
     async def __command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
