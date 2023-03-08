@@ -18,6 +18,7 @@ class State(Enum):
     Playing = 1
     Paused = 2
     Starting = 3  # unsure, only seen once
+    Advertisement = 1081
 
 
 class PlaybackStateData(TypedDict):
@@ -57,7 +58,10 @@ class PlaybackState:
         try:
             self.state = State(int(state["state"]))
         except ValueError:
-            self.__logger.warning("Unknown state %s %s", state["state"], state)
+            self.__logger.warning(
+                "Unknown state %s %s. Assuming stopped state.", state["state"], state
+            )
+            self.state = State.Stopped
 
     def __eq__(self, other):
         return vars(self) == vars(other)
