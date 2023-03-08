@@ -365,6 +365,15 @@ class YtLoungeApi:
                     self.__logger.exception(ex)
                     return False
 
+    def __handle_session_result(self, status_code: int, reason: str) -> bool:
+        if status_code == 400 and "Unknown SID" in reason:
+            self.__connection_lost()
+            return False
+        if status_code == 410 and "Gone" in reason:
+            self.__connection_lost()
+            return False
+        return True
+
     async def subscribe(self, callback: Callable[[PlaybackState], Any]) -> None:
         """Start listening for events"""
         if not self.connected():
@@ -402,6 +411,8 @@ class YtLoungeApi:
                     self.__logger.info(
                         "Subscribe completed, status %i %s", resp.status, resp.reason
                     )
+                    self.__handle_session_result(resp.status, resp.reason)
+
         except Exception as ex:
             self.__logger.exception(ex)
 
@@ -434,11 +445,7 @@ class YtLoungeApi:
             async with session.post(url=req.url, data=command_body) as resp:
                 try:
                     response_text = await resp.text()
-                    if resp.status == 400 and "Unknown SID" in response_text:
-                        self.__connection_lost()
-                        return False
-                    if resp.status == 410 and "Gone" in response_text:
-                        self.__connection_lost()
+                    if not self.__handle_session_result(resp.status, response_text):
                         return False
                     resp.raise_for_status()
                     return True
