@@ -36,7 +36,11 @@ class PlaybackState:
     videoId: str
     state: State
 
-    def __init__(self, state: Union[NowPlayingData, None] = None):
+    def __init__(
+        self, logger: logging.Logger, state: Union[NowPlayingData, None] = None
+    ):
+        self.__logger = logger
+
         if not state or "state" not in state:
             self.currentTime = 0.0
             self.duration = 0.0
@@ -50,7 +54,10 @@ class PlaybackState:
     def apply_state(self, state: PlaybackStateData):
         self.currentTime = float(state["currentTime"])
         self.duration = float(state["duration"])
-        self.state = State(int(state["state"]))
+        try:
+            self.state = State(int(state["state"]))
+        except ValueError:
+            self.__logger.warning("Unknown state %s %s", state["state"], state)
 
     def __eq__(self, other):
         return vars(self) == vars(other)
@@ -134,7 +141,7 @@ class YtLoungeApi:
         self._sid = None
         self._gsession = None
         self._last_event_id = None
-        self.state = PlaybackState()
+        self.state = PlaybackState(logger)
         self.state_update = 0
         self._command_offset = 1
         self.__screen_name: str = None
@@ -247,7 +254,7 @@ class YtLoungeApi:
             self.__update_state()
         elif event_type == "nowPlaying":
             data = args[0]
-            self.state = PlaybackState(data)
+            self.state = PlaybackState(self.__logger, data)
             self.__update_state()
         elif event_type == "loungeStatus":
             data: __LoungeStatus = args[0]
@@ -258,7 +265,7 @@ class YtLoungeApi:
                     self.__device_info = json.loads(device["deviceInfo"])
                     break
         elif event_type == "loungeScreenDisconnected":
-            self.state = PlaybackState()
+            self.state = PlaybackState(self.__logger)
             self.__update_state()
             self.__connection_lost()
         elif event_type == "noop":
