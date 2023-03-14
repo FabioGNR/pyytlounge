@@ -250,6 +250,7 @@ class YtLoungeApi:
     def __connection_lost(self):
         self._sid = None
         self._gsession = None
+        self._last_event_id = None
 
     def __process_event(self, event_id: int, event_type: str, args):
         if event_type == "onStateChange":
