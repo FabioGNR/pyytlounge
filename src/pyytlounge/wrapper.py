@@ -411,6 +411,9 @@ class YtLoungeApi:
         try:
             async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
                 async with session.get(req.url) as resp:
+                    if not self.__handle_session_result(resp.status, resp.reason):
+                        return
+
                     async for events in self.__parse_event_chunks(
                         iter_response_lines(resp.content)
                     ):
@@ -423,7 +426,6 @@ class YtLoungeApi:
                     self.__logger.info(
                         "Subscribe completed, status %i %s", resp.status, resp.reason
                     )
-                    self.__handle_session_result(resp.status, resp.reason)
 
         except Exception as ex:
             self.__logger.exception(ex)
