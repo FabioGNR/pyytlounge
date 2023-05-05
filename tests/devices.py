@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, Dict
 from dataclasses import dataclass
 
 
@@ -18,7 +18,7 @@ class Device:
     expectations: DeviceExpectations
 
 
-devices: dict[str, Device] = {
+devices: Dict[str, Device] = {
     "LG OLED55C7V": Device(
         {
             "loungeStatus": {
