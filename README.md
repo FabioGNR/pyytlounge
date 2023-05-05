@@ -14,6 +14,10 @@ Activate virtual environment:
 2. Copy variables_example.py to variables.py and enter screen id and lounge token there.
 3. `python main.py`
 
+## Release Notes
+
+See [CHANGELOG](CHANGELOG.md).
+
 ## Thanks
 
 - https://github.com/henriquekano/youtube-lounge-api
