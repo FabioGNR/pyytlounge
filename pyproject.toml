@@ -12,10 +12,20 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+  'requests==2.28.1',
+  'aiohttp==3.8.1',
+]
 
 [project.urls]
-"Homepage" = "https://github.com/pypa/sampleproject"
-"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
+"Homepage" = "https://github.com/FabioGNR/pyytlounge"
+"Bug Tracker" = "https://github.com/FabioGNR/pyytlounge/issues"
+
+[project.optional-dependencies]
+tests = [
+  'pytest',
+  'pytest-mock',
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -40,7 +40,7 @@ class PlaybackState:
     def __init__(
         self, logger: logging.Logger, state: Union[NowPlayingData, None] = None
     ):
-        self.__logger = logger
+        self._logger = logger
 
         if not state or "state" not in state:
             self.currentTime = 0.0
@@ -58,7 +58,7 @@ class PlaybackState:
         try:
             self.state = State(int(state["state"]))
         except ValueError:
-            self.__logger.warning(
+            self._logger.warning(
                 "Unknown state %s %s. Assuming stopped state.", state["state"], state
             )
             self.state = State.Stopped
@@ -148,9 +148,9 @@ class YtLoungeApi:
         self.state = PlaybackState(logger)
         self.state_update = 0
         self._command_offset = 1
-        self.__screen_name: str = None
-        self.__device_info: __DeviceInfo = None
-        self.__logger = logger or logging.Logger(__package__, logging.DEBUG)
+        self._screen_name: str = None
+        self._device_info: __DeviceInfo = None
+        self._logger = logger or logging.Logger(__package__, logging.DEBUG)
 
     def paired(self) -> bool:
         """Returns true if screen id and lounge id token are known."""
@@ -178,15 +178,15 @@ class YtLoungeApi:
         if not self.linked():
             raise Exception("Not linked")
 
-        return self.__screen_name
+        return self._screen_name
 
     @property
     def screen_device_name(self) -> str:
         """Returns device name built from device info returned by YouTube"""
         if not self.connected():
             raise Exception("Not connected")
-        brand = self.__device_info["brand"]
-        model = self.__device_info["model"]
+        brand = self._device_info["brand"]
+        model = self._device_info["model"]
         return f"{brand} {model}"
 
     async def pair(self, pairing_code) -> bool:
@@ -199,12 +199,12 @@ class YtLoungeApi:
                 try:
                     screens = await resp.json()
                     screen = screens["screen"]
-                    self.__screen_name = screen["name"]
+                    self._screen_name = screen["name"]
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
                     return self.linked()
                 except Exception as ex:
-                    self.__logger.exception(ex)
+                    self._logger.exception(ex)
                     return False
 
     async def refresh_auth(self) -> bool:
@@ -222,13 +222,13 @@ class YtLoungeApi:
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
 
-                    self.__logger.info(
+                    self._logger.info(
                         "Refreshed auth, lounge id token %s", self.auth.lounge_id_token
                     )
 
                     return self.linked()
                 except Exception as ex:
-                    self.__logger.exception(ex)
+                    self._logger.exception(ex)
                     return False
 
     def store_auth_state(self) -> dict:
@@ -244,41 +244,41 @@ class YtLoungeApi:
         self.auth = AuthState()
         self.auth.deserialize(data)
 
-    def __update_state(self):
+    def _update_state(self):
         self.state_update = self.state_update + 1
 
-    def __connection_lost(self):
+    def _connection_lost(self):
         self._sid = None
         self._gsession = None
         self._last_event_id = None
 
-    def __process_event(self, event_id: int, event_type: str, args):
+    def _process_event(self, event_id: int, event_type: str, args):
         if event_type == "onStateChange":
             data = args[0]
             self.state.apply_state(data)
-            self.__update_state()
+            self._update_state()
         elif event_type == "nowPlaying":
             data = args[0]
-            self.state = PlaybackState(self.__logger, data)
-            self.__update_state()
+            self.state = PlaybackState(self._logger, data)
+            self._update_state()
         elif event_type == "loungeStatus":
             data: __LoungeStatus = args[0]
             devices: List[__Device] = json.loads(data["devices"])
             for device in devices:
                 if device["type"] == "LOUNGE_SCREEN":
-                    self.__screen_name = device["name"]
-                    self.__device_info = json.loads(device["deviceInfo"])
+                    self._screen_name = device["name"]
+                    self._device_info = json.loads(device["deviceInfo"])
                     break
         elif event_type == "loungeScreenDisconnected":
-            self.state = PlaybackState(self.__logger)
-            self.__update_state()
-            self.__connection_lost()
+            self.state = PlaybackState(self._logger)
+            self._update_state()
+            self._connection_lost()
         elif event_type == "noop":
             pass  # no-op
         else:
-            self.__logger.debug("Unprocessed event %s %s", event_type, args)
+            self._logger.debug("Unprocessed event %s %s", event_type, args)
 
-    def __process_events(self, events):
+    def _process_events(self, events):
         for event in events:
             event_id, (event_type, *args) = event
             if event_type == "c":
@@ -286,12 +286,12 @@ class YtLoungeApi:
             elif event_type == "S":
                 self._gsession = args[0]
             else:
-                self.__process_event(event_id, event_type, args)
+                self._process_event(event_id, event_type, args)
 
         last_id = events[-1][0]
         self._last_event_id = last_id
 
-    async def __parse_event_chunks(self, lines: AsyncIterator[str]):
+    async def _parse_event_chunks(self, lines: AsyncIterator[str]):
         chunk_remaining = 0
         current_chunk = ""
         async for line in lines:
@@ -364,25 +364,25 @@ class YtLoungeApi:
                         return False
 
                     if resp.status != 200:
-                        self.__logger.warning(
+                        self._logger.warning(
                             "Unknown reply to connect %i %s", resp.status, resp.reason
                         )
                         return False
                     lines = text.splitlines()
-                    async for events in self.__parse_event_chunks(desync(lines)):
-                        self.__process_events(events)
+                    async for events in self._parse_event_chunks(desync(lines)):
+                        self._process_events(events)
                     self._command_offset = 1
                     return self.connected()
                 except Exception as ex:
-                    self.__logger.exception(ex)
+                    self._logger.exception(ex)
                     return False
 
-    def __handle_session_result(self, status_code: int, reason: str) -> bool:
+    def _handle_session_result(self, status_code: int, reason: str) -> bool:
         if status_code == 400 and "Unknown SID" in reason:
-            self.__connection_lost()
+            self._connection_lost()
             return False
         if status_code == 410 and "Gone" in reason:
-            self.__connection_lost()
+            self._connection_lost()
             return False
         return True
 
@@ -407,30 +407,30 @@ class YtLoungeApi:
         }
         req = PreparedRequest()
         req.prepare_url(f"{api_base}/bc/bind", params)
-        self.__logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
+        self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
         try:
             async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
                 async with session.get(req.url) as resp:
-                    if not self.__handle_session_result(resp.status, resp.reason):
+                    if not self._handle_session_result(resp.status, resp.reason):
                         return
 
-                    async for events in self.__parse_event_chunks(
+                    async for events in self._parse_event_chunks(
                         iter_response_lines(resp.content)
                     ):
                         pre_state_update = self.state_update
-                        self.__process_events(events)
+                        self._process_events(events)
                         if pre_state_update != self.state_update:
                             await callback(self.state)
                         if not self.connected():
                             break
-                    self.__logger.info(
+                    self._logger.info(
                         "Subscribe completed, status %i %s", resp.status, resp.reason
                     )
 
         except Exception as ex:
-            self.__logger.exception(ex)
+            self._logger.exception(ex)
 
-    async def __command(self, command: str, command_parameters: dict = None) -> bool:
+    async def _command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
             raise Exception("Not connected")
 
@@ -459,30 +459,30 @@ class YtLoungeApi:
             async with session.post(url=req.url, data=command_body) as resp:
                 try:
                     response_text = await resp.text()
-                    if not self.__handle_session_result(resp.status, response_text):
+                    if not self._handle_session_result(resp.status, response_text):
                         return False
                     resp.raise_for_status()
                     return True
                 except Exception as ex:
-                    self.__logger.exception(ex)
+                    self._logger.exception(ex)
                     return False
 
     async def play(self) -> bool:
         """Sends play command to screen"""
-        return await self.__command("play")
+        return await self._command("play")
 
     async def pause(self) -> bool:
         """Sends pause command to screen"""
-        return await self.__command("pause")
+        return await self._command("pause")
 
     async def previous(self) -> bool:
         """Sends previous command to screen"""
-        return await self.__command("previous")
+        return await self._command("previous")
 
     async def next(self) -> bool:
         """Sends next command to screen"""
-        return await self.__command("next")
+        return await self._command("next")
 
     async def seek_to(self, time: float) -> bool:
         """Seek to given time (seconds)"""
-        return await self.__command("seekTo", {"newTime": time})
+        return await self._command("seekTo", {"newTime": time})
