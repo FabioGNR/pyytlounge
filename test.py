@@ -14,8 +14,8 @@ async def go():
             api.load_auth_state(literal_eval(content))
             print("Loaded from file")
     else:
-        pairing_code = int(input("Enter pairing code: "))
-        print("Pairing...")
+        pairing_code = input("Enter pairing code: ")
+        print(f"Pairing with code {pairing_code}...")
         paired = await api.pair(pairing_code)
         print(paired and "success" or "failed")
         if not paired:
