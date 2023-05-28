@@ -7,7 +7,6 @@ from typing import Any, AsyncIterator, List, TypedDict, Union, Callable
 
 import aiohttp
 from aiohttp import ClientTimeout
-from requests.models import PreparedRequest
 
 from .api import api_base
 
@@ -405,12 +404,11 @@ class YtLoungeApi:
             "gsessionid": self._gsession,
             "TYPE": "xmlhttp",
         }
-        req = PreparedRequest()
-        req.prepare_url(f"{api_base}/bc/bind", params)
+        url = f"{api_base}/bc/bind"
         self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
         try:
             async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
-                async with session.get(req.url) as resp:
+                async with session.get(url=url, params=params) as resp:
                     if not self._handle_session_result(resp.status, resp.reason):
                         return
 
@@ -450,10 +448,9 @@ class YtLoungeApi:
             "gsessionid": self._gsession,
             "auth_failure_option": "send_error",
         }
-        req = PreparedRequest()
-        req.prepare_url(f"{api_base}/bc/bind", params)
+        url = f"{api_base}/bc/bind"
         async with aiohttp.ClientSession() as session:
-            async with session.post(url=req.url, data=command_body) as resp:
+            async with session.post(url=url, data=command_body, params=params) as resp:
                 try:
                     response_text = await resp.text()
                     if not self._handle_session_result(resp.status, response_text):
@@ -487,10 +484,9 @@ class YtLoungeApi:
             "AID": self._last_event_id,
             "gsessionid": self._gsession,
         }
-        req = PreparedRequest()
-        req.prepare_url(f"{api_base}/bc/bind", params)
+        url = f"{api_base}/bc/bind"
         async with aiohttp.ClientSession() as session:
-            async with session.post(url=req.url, data=command_body) as resp:
+            async with session.post(url=url, data=command_body, params=params) as resp:
                 try:
                     response_text = await resp.text()
                     if not self._handle_session_result(resp.status, response_text):
