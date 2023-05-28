@@ -428,7 +428,7 @@ class YtLoungeApi:
         except Exception as ex:
             self._logger.exception(ex)
 
-    async def disconnect(self) -> None:
+    async def disconnect(self) -> bool:
         """Disconnect from the current session"""
         if not self.connected():
             raise Exception("Not connected")
