@@ -7,7 +7,6 @@ from typing import Any, AsyncIterator, List, TypedDict, Union, Callable
 
 import aiohttp
 from aiohttp import ClientTimeout
-from requests.models import PreparedRequest
 
 from .api import api_base
 
@@ -267,7 +266,7 @@ class YtLoungeApi:
             for device in devices:
                 if device["type"] == "LOUNGE_SCREEN":
                     self._screen_name = device["name"]
-                    self._device_info = json.loads(device["deviceInfo"])
+                    self._device_info = json.loads(device.get("deviceInfo", "{}"))
                     break
         elif event_type == "loungeScreenDisconnected":
             self.state = PlaybackState(self._logger)
@@ -405,12 +404,11 @@ class YtLoungeApi:
             "gsessionid": self._gsession,
             "TYPE": "xmlhttp",
         }
-        req = PreparedRequest()
-        req.prepare_url(f"{api_base}/bc/bind", params)
+        url = f"{api_base}/bc/bind"
         self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
         try:
             async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
-                async with session.get(req.url) as resp:
+                async with session.get(url=url, params=params) as resp:
                     if not self._handle_session_result(resp.status, resp.reason):
                         return
 
@@ -429,6 +427,39 @@ class YtLoungeApi:
 
         except Exception as ex:
             self._logger.exception(ex)
+
+    async def disconnect(self) -> bool:
+        """Disconnect from the current session"""
+        if not self.connected():
+            raise Exception("Not connected")
+        
+        command_body = {"ui": "", "TYPE": "terminate", "clientDisconnectReason": "MDX_SESSION_DISCONNECT_REASON_DISCONNECTED_BY_USER"}
+        params = {
+            "device": "REMOTE_CONTROL",
+            "name": self.device_name,
+            "app": "youtube-desktop",
+            "loungeIdToken": self.auth.lounge_id_token,
+            "VER": "8",
+            "v": "2",
+            "CVER": "1",
+            "RID": self._command_offset,
+            "SID": self._sid,
+            "AID": self._last_event_id,
+            "gsessionid": self._gsession,
+            "auth_failure_option": "send_error",
+        }
+        url = f"{api_base}/bc/bind"
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url=url, data=command_body, params=params) as resp:
+                try:
+                    response_text = await resp.text()
+                    if not self._handle_session_result(resp.status, response_text):
+                        return False
+                    resp.raise_for_status()
+                    return True
+                except Exception as ex:
+                    self._logger.exception(ex)
+                    return False
 
     async def _command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
@@ -453,10 +484,9 @@ class YtLoungeApi:
             "AID": self._last_event_id,
             "gsessionid": self._gsession,
         }
-        req = PreparedRequest()
-        req.prepare_url(f"{api_base}/bc/bind", params)
+        url = f"{api_base}/bc/bind"
         async with aiohttp.ClientSession() as session:
-            async with session.post(url=req.url, data=command_body) as resp:
+            async with session.post(url=url, data=command_body, params=params) as resp:
                 try:
                     response_text = await resp.text()
                     if not self._handle_session_result(resp.status, response_text):
@@ -486,3 +516,11 @@ class YtLoungeApi:
     async def seek_to(self, time: float) -> bool:
         """Seek to given time (seconds)"""
         return await self._command("seekTo", {"newTime": time})
+
+    async def skip_ad(self) -> bool:
+        """Skips ad if possible"""
+        return await super()._command("skipAd")
+
+    async def set_volume(self, volume: int) -> bool:
+        """Sets volume to given value (0-100)"""
+        await super()._command("setVolume", {"volume": volume})
