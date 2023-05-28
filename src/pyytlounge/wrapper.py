@@ -430,6 +430,40 @@ class YtLoungeApi:
         except Exception as ex:
             self._logger.exception(ex)
 
+    async def disconnect(self) -> None:
+        """Disconnect from the current session"""
+        if not self.connected():
+            raise Exception("Not connected")
+        
+        command_body = {"ui": "", "TYPE": "terminate", "clientDisconnectReason": "MDX_SESSION_DISCONNECT_REASON_DISCONNECTED_BY_USER"}
+        params = {
+            "device": "REMOTE_CONTROL",
+            "name": self.device_name,
+            "app": "youtube-desktop",
+            "loungeIdToken": self.auth.lounge_id_token,
+            "VER": "8",
+            "v": "2",
+            "CVER": "1",
+            "RID": self._command_offset,
+            "SID": self._sid,
+            "AID": self._last_event_id,
+            "gsessionid": self._gsession,
+            "auth_failure_option": "send_error",
+        }
+        req = PreparedRequest()
+        req.prepare_url(f"{api_base}/bc/bind", params)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url=req.url, data=command_body) as resp:
+                try:
+                    response_text = await resp.text()
+                    if not self._handle_session_result(resp.status, response_text):
+                        return False
+                    resp.raise_for_status()
+                    return True
+                except Exception as ex:
+                    self._logger.exception(ex)
+                    return False
+
     async def _command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
             raise Exception("Not connected")
@@ -486,3 +520,11 @@ class YtLoungeApi:
     async def seek_to(self, time: float) -> bool:
         """Seek to given time (seconds)"""
         return await self._command("seekTo", {"newTime": time})
+
+    async def skip_ad(self) -> bool:
+        """Skips ad if possible"""
+        return await super()._command("skipAd")
+
+    async def set_volume(self, volume: int) -> bool:
+        """Sets volume to given value (0-100)"""
+        await super()._command("setVolume", {"volume": volume})
