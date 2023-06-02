@@ -4,6 +4,7 @@ import json
 import logging
 from enum import Enum
 from typing import Any, AsyncIterator, List, TypedDict, Union, Callable
+from dataclasses import dataclass
 
 import aiohttp
 from aiohttp import ClientTimeout
@@ -80,6 +81,7 @@ class AuthStateData(TypedDict):
     expiry: int
 
 
+@dataclass
 class AuthState:
     version: int
     screen_id: str
@@ -88,7 +90,12 @@ class AuthState:
     expiry: int
 
     def __init__(self):
+        super().__init__()
         self.version = CURRENT_AUTH_VERSION
+        self.screen_id = None
+        self.lounge_id_token = None
+        self.refresh_token = None
+        self.expiry = None
 
     def serialize(self) -> AuthStateData:
         return vars(self)
@@ -266,7 +273,7 @@ class YtLoungeApi:
             for device in devices:
                 if device["type"] == "LOUNGE_SCREEN":
                     self._screen_name = device["name"]
-                    self._device_info = json.loads(device.get("deviceInfo", "{}"))
+                    self._device_info = json.loads(device.get("deviceInfo", "null"))
                     break
         elif event_type == "loungeScreenDisconnected":
             self.state = PlaybackState(self._logger)
