@@ -7,12 +7,14 @@ from typing import Any, AsyncIterator, List, TypedDict, Union, Callable
 from dataclasses import dataclass
 
 import aiohttp
-from aiohttp import ClientTimeout
+from aiohttp import ClientTimeout, StreamReader
 
 from .api import api_base
 
 
 class State(Enum):
+    """Playback state"""
+
     Stopped = -1
     Buffering = 0  # unsure, happens between videos
     Playing = 1
@@ -83,6 +85,9 @@ class AuthStateData(TypedDict):
 
 @dataclass
 class AuthState:
+    """Stores information used to authenticate with YouTube.
+    Can be serialized and deserialized for reuse."""
+
     version: int
     screen_id: str
     lounge_id_token: str
@@ -98,9 +103,11 @@ class AuthState:
         self.expiry = None
 
     def serialize(self) -> AuthStateData:
+        """Serializes the current state into a dictionary."""
         return vars(self)
 
     def deserialize(self, data: AuthStateData):
+        """Deserializes state from a dictionary into this object."""
         if data["version"] == CURRENT_AUTH_VERSION:
             for key in data:
                 setattr(self, key, data[key])
@@ -123,12 +130,14 @@ class __LoungeStatus(TypedDict):
     devices: str  # json string containing list of __Device
 
 
-async def desync(it):
-    for x in it:
-        yield x
+async def desync(iterator):
+    """Turns a synchronous iterator into an asynchronous iterator"""
+    for item in iterator:
+        yield item
 
 
-async def iter_response_lines(resp):
+async def iter_response_lines(resp: StreamReader):
+    """Enumerate lines in response one at a time."""
     while True:
         line = await resp.readline()
         if line:
@@ -439,8 +448,12 @@ class YtLoungeApi:
         """Disconnect from the current session"""
         if not self.connected():
             raise Exception("Not connected")
-        
-        command_body = {"ui": "", "TYPE": "terminate", "clientDisconnectReason": "MDX_SESSION_DISCONNECT_REASON_DISCONNECTED_BY_USER"}
+
+        command_body = {
+            "ui": "",
+            "TYPE": "terminate",
+            "clientDisconnectReason": "MDX_SESSION_DISCONNECT_REASON_DISCONNECTED_BY_USER",
+        }
         params = {
             "device": "REMOTE_CONTROL",
             "name": self.device_name,
@@ -526,8 +539,8 @@ class YtLoungeApi:
 
     async def skip_ad(self) -> bool:
         """Skips ad if possible"""
-        return await super()._command("skipAd")
+        return await self._command("skipAd")
 
     async def set_volume(self, volume: int) -> bool:
         """Sets volume to given value (0-100)"""
-        await super()._command("setVolume", {"volume": volume})
+        return await self._command("setVolume", {"volume": volume})
