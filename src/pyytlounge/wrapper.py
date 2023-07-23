@@ -151,6 +151,24 @@ def get_thumbnail_url(video_id: str, thumbnail_idx=0) -> str:
     return f"https://img.youtube.com/vi/{video_id}/{thumbnail_idx}.jpg"
 
 
+class NotConnectedException(Exception):
+    """This exception indicates an operation that failed due to an incorrect state.
+    The operation requires that there is an active connection to the API.
+    Use the connected() and connect() functions on YtLoungeApi."""
+
+
+class NotPairedException(Exception):
+    """This exception indicates an operation that failed due to an incorrect state.
+    The operation requires that the API has been paired with a screen.
+    Use the paired() and pair() functions on YtLoungeApi."""
+
+
+class NotLinkedException(Exception):
+    """This exception indicates an operation that failed due to an incorrect state.
+    The operation requires that the API has been linked with a screen.
+    Use the linked(), pair() and refresh_auth() functions on YtLoungeApi."""
+
+
 class YtLoungeApi:
     """Wrapper class for YouTube Lounge API"""
 
@@ -191,7 +209,7 @@ class YtLoungeApi:
     def screen_name(self) -> str:
         """Returns screen name as returned by YouTube"""
         if not self.linked():
-            raise Exception("Not linked")
+            raise NotLinkedException("Not linked")
 
         return self._screen_name
 
@@ -199,7 +217,7 @@ class YtLoungeApi:
     def screen_device_name(self) -> str:
         """Returns device name built from device info returned by YouTube"""
         if not self.connected():
-            raise Exception("Not connected")
+            raise NotConnectedException("Not connected")
         brand = self._device_info["brand"]
         model = self._device_info["model"]
         return f"{brand} {model}"
@@ -225,7 +243,7 @@ class YtLoungeApi:
     async def refresh_auth(self) -> bool:
         """Refresh lounge token using stored refresh token."""
         if not self.paired():
-            raise Exception("Must be paired")
+            raise NotPairedException("Must be paired")
 
         async with aiohttp.ClientSession() as session:
             refresh_url = f"{api_base}/pairing/get_lounge_token_batch"
@@ -327,7 +345,7 @@ class YtLoungeApi:
         Must be linked prior to this."""
 
         if not self.linked():
-            raise Exception("Not connected")
+            raise NotConnectedException("Not connected")
 
         body = {"lounge_token": self.auth.lounge_id_token}
 
@@ -351,7 +369,7 @@ class YtLoungeApi:
     async def connect(self) -> bool:
         """Attempt to connect using the previously set tokens"""
         if not self.linked():
-            raise Exception("Not linked")
+            raise NotLinkedException("Not linked")
 
         connect_body = {
             "app": "web",
@@ -404,7 +422,7 @@ class YtLoungeApi:
     async def subscribe(self, callback: Callable[[PlaybackState], Any]) -> None:
         """Start listening for events"""
         if not self.connected():
-            raise Exception("Not connected")
+            raise NotConnectedException("Not connected")
 
         params = {
             "device": "REMOTE_CONTROL",
@@ -447,7 +465,7 @@ class YtLoungeApi:
     async def disconnect(self) -> bool:
         """Disconnect from the current session"""
         if not self.connected():
-            raise Exception("Not connected")
+            raise NotConnectedException("Not connected")
 
         command_body = {
             "ui": "",
@@ -483,7 +501,7 @@ class YtLoungeApi:
 
     async def _command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
-            raise Exception("Not connected")
+            raise NotConnectedException("Not connected")
 
         command_body = {"count": 1, "ofs": self._command_offset, "req0__sc": command}
         if command_parameters:
