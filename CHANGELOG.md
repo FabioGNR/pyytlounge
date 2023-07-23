@@ -1,3 +1,13 @@
+# 1.6.1
+
+### Changed
+
+- functions now raise specific exception types for:
+  - not paired: NotPairedException
+  - not linked: NotLinkedException
+  - not connected: NotConnectedException
+- logging of exceptions was extended with status code and reason returned by Yt Lounge API
+
 # 1.6.0
 
 ### Added
