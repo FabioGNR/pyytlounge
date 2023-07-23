@@ -389,7 +389,7 @@ class YtLoungeApi:
                     self._command_offset = 1
                     return self.connected()
                 except Exception as ex:
-                    self._logger.exception(ex)
+                    self._logger.exception(ex, resp.status, resp.reason)
                     return False
 
     def _handle_session_result(self, status_code: int, reason: str) -> bool:
@@ -422,9 +422,9 @@ class YtLoungeApi:
         }
         url = f"{api_base}/bc/bind"
         self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
-        try:
-            async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
-                async with session.get(url=url, params=params) as resp:
+        async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
+            async with session.get(url=url, params=params) as resp:
+                try:
                     if not self._handle_session_result(resp.status, resp.reason):
                         return
 
@@ -441,8 +441,8 @@ class YtLoungeApi:
                         "Subscribe completed, status %i %s", resp.status, resp.reason
                     )
 
-        except Exception as ex:
-            self._logger.exception(ex)
+                except Exception as ex:
+                    self._logger.exception(ex, resp.status, resp.reason)
 
     async def disconnect(self) -> bool:
         """Disconnect from the current session"""
