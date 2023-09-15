@@ -1,3 +1,9 @@
+# 1.6.2
+
+### Changed
+
+- aiohttp dependency is now specified as >=3.8.4
+
 # 1.6.1
 
 ### Changed
