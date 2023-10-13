@@ -280,6 +280,9 @@ class YtLoungeApi:
     def _update_state(self):
         self.state_update = self.state_update + 1
 
+    def _lounge_token_expired(self):
+        self.auth.lounge_id_token = None
+
     def _connection_lost(self):
         self._sid = None
         self._gsession = None
@@ -393,7 +396,7 @@ class YtLoungeApi:
                 try:
                     text = await resp.text()
                     if resp.status == 401:
-                        self.auth.lounge_id_token = None
+                        self._lounge_token_expired()
                         return False
 
                     if resp.status != 200:
@@ -420,6 +423,10 @@ class YtLoungeApi:
             return False
         if status_code == 410 and "Gone" in reason:
             self._connection_lost()
+            return False
+        if status_code == 401 and "Expired" in reason:
+            self._connection_lost()
+            self._lounge_token_expired()
             return False
         return True
 
