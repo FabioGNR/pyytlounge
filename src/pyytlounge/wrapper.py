@@ -236,8 +236,8 @@ class YtLoungeApi:
                     self.auth.screen_id = screen["screenId"]
                     self.auth.lounge_id_token = screen["loungeToken"]
                     return self.linked()
-                except Exception as ex:
-                    self._logger.exception(ex)
+                except:
+                    self._logger.exception("Pairing failed")
                     return False
 
     async def refresh_auth(self) -> bool:
@@ -260,8 +260,8 @@ class YtLoungeApi:
                     )
 
                     return self.linked()
-                except Exception as ex:
-                    self._logger.exception(ex)
+                except:
+                    self._logger.exception("Refresh auth failed")
                     return False
 
     def store_auth_state(self) -> dict:
@@ -406,8 +406,12 @@ class YtLoungeApi:
                         self._process_events(events)
                     self._command_offset = 1
                     return self.connected()
-                except Exception as ex:
-                    self._logger.exception(ex, resp.status, resp.reason)
+                except:
+                    self._logger.exception(
+                        "Handle connect failed, status %s reason %s",
+                        resp.status,
+                        resp.reason,
+                    )
                     return False
 
     def _handle_session_result(self, status_code: int, reason: str) -> bool:
@@ -459,8 +463,12 @@ class YtLoungeApi:
                         "Subscribe completed, status %i %s", resp.status, resp.reason
                     )
 
-                except Exception as ex:
-                    self._logger.exception(ex, resp.status, resp.reason)
+                except:
+                    self._logger.exception(
+                        "Handle subscribe failed, status %s reason %s",
+                        resp.status,
+                        resp.reason,
+                    )
 
     async def disconnect(self) -> bool:
         """Disconnect from the current session"""
@@ -495,8 +503,8 @@ class YtLoungeApi:
                         return False
                     resp.raise_for_status()
                     return True
-                except Exception as ex:
-                    self._logger.exception(ex)
+                except:
+                    self._logger.exception("Disconnect failed")
                     return False
 
     async def _command(self, command: str, command_parameters: dict = None) -> bool:
@@ -531,8 +539,8 @@ class YtLoungeApi:
                         return False
                     resp.raise_for_status()
                     return True
-                except Exception as ex:
-                    self._logger.exception(ex)
+                except:
+                    self._logger.exception("Command failed")
                     return False
 
     async def play(self) -> bool:
