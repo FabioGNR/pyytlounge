@@ -1,3 +1,10 @@
+# 1.6.3
+
+### Changed
+
+- Fixed exception logging
+- Add handling for missing expired lounge token
+
 # 1.6.2
 
 ### Changed
