@@ -1,3 +1,10 @@
+# 1.7.0
+
+### Changed
+
+- Specify `'ui': 'false'` when connecting to device @dmunozv04.
+  This should prevent an [issue with YouTube Kids](https://github.com/FabioGNR/pyytlounge/pull/6)
+
 # 1.6.3
 
 ### Changed
