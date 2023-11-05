@@ -383,7 +383,7 @@ class YtLoungeApi:
             "capabilities": "que,dsdtr,atp",
             "method": "setPlaylist",
             "magnaKey": "cloudPairedDevice",
-            "ui": "",
+            "ui": "false",
             "deviceContext": "user_agent=dunno&window_width_points=&window_height_points=&os_name=android&ms=",
             "theme": "cl",
             "loungeIdToken": self.auth.lounge_id_token,
