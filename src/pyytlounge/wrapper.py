@@ -184,6 +184,7 @@ class YtLoungeApi:
         self._screen_name: str = None
         self._device_info: __DeviceInfo = None
         self._logger = logger or logging.Logger(__package__, logging.DEBUG)
+        self.conn = aiohttp.TCPConnector(ttl_dns_cache=300)
 
     def paired(self) -> bool:
         """Returns true if screen id and lounge id token are known."""
@@ -225,7 +226,7 @@ class YtLoungeApi:
     async def pair(self, pairing_code) -> bool:
         """Pair with a device using a manual input pairing code"""
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector = self.conn) as session:
             pair_url = f"{api_base}/pairing/get_screen"
             pair_data = {"pairing_code": pairing_code}
             async with session.post(url=pair_url, data=pair_data) as resp:
@@ -245,7 +246,7 @@ class YtLoungeApi:
         if not self.paired():
             raise NotPairedException("Must be paired")
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector = self.conn) as session:
             refresh_url = f"{api_base}/pairing/get_lounge_token_batch"
             refresh_data = {"screen_ids": self.auth.screen_id}
             async with session.post(url=refresh_url, data=refresh_data) as resp:
@@ -354,7 +355,7 @@ class YtLoungeApi:
 
         url = f"{api_base}/pairing/get_screen_availability"
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector = self.conn) as session:
             result = await session.post(url=url, data=body)
             status = await result.json()
             if "screens" in status and len(status["screens"]) > 0:
@@ -391,7 +392,7 @@ class YtLoungeApi:
         connect_url = (
             f"{api_base}/bc/bind?RID=1&VER=8&CVER=1&auth_failure_option=send_error"
         )
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector = self.conn) as session:
             async with session.post(url=connect_url, data=connect_body) as resp:
                 try:
                     text = await resp.text()
@@ -451,7 +452,7 @@ class YtLoungeApi:
         }
         url = f"{api_base}/bc/bind"
         self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
-        async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
+        async with aiohttp.ClientSession(timeout=ClientTimeout(), connector = self.conn) as session:
             async with session.get(url=url, params=params) as resp:
                 try:
                     if not self._handle_session_result(resp.status, resp.reason):
@@ -502,7 +503,7 @@ class YtLoungeApi:
             "auth_failure_option": "send_error",
         }
         url = f"{api_base}/bc/bind"
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector = self.conn) as session:
             async with session.post(url=url, data=command_body, params=params) as resp:
                 try:
                     response_text = await resp.text()
@@ -538,7 +539,7 @@ class YtLoungeApi:
             "gsessionid": self._gsession,
         }
         url = f"{api_base}/bc/bind"
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector = self.conn) as session:
             async with session.post(url=url, data=command_body, params=params) as resp:
                 try:
                     response_text = await resp.text()
