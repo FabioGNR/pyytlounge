@@ -185,6 +185,7 @@ class YtLoungeApi:
         self._device_info: __DeviceInfo = None
         self._logger = logger or logging.Logger(__package__, logging.DEBUG)
         self.conn = aiohttp.TCPConnector(ttl_dns_cache=300)
+        self.session = aiohttp.ClientSession(connector = self.conn)
 
     def paired(self) -> bool:
         """Returns true if screen id and lounge id token are known."""
@@ -226,44 +227,39 @@ class YtLoungeApi:
     async def pair(self, pairing_code) -> bool:
         """Pair with a device using a manual input pairing code"""
 
-        async with aiohttp.ClientSession(connector = self.conn) as session:
-            pair_url = f"{api_base}/pairing/get_screen"
-            pair_data = {"pairing_code": pairing_code}
-            async with session.post(url=pair_url, data=pair_data) as resp:
-                try:
-                    screens = await resp.json()
-                    screen = screens["screen"]
-                    self._screen_name = screen["name"]
-                    self.auth.screen_id = screen["screenId"]
-                    self.auth.lounge_id_token = screen["loungeToken"]
-                    return self.linked()
-                except:
-                    self._logger.exception("Pairing failed")
-                    return False
+        pair_url = f"{api_base}/pairing/get_screen"
+        pair_data = {"pairing_code": pairing_code}
+        async with self.session.post(url=pair_url, data=pair_data) as resp:
+            try:
+                screens = await resp.json()
+                screen = screens["screen"]
+                self._screen_name = screen["name"]
+                self.auth.screen_id = screen["screenId"]
+                self.auth.lounge_id_token = screen["loungeToken"]
+                return self.linked()
+            except:
+                self._logger.exception("Pairing failed")
+                return False
 
     async def refresh_auth(self) -> bool:
         """Refresh lounge token using stored refresh token."""
-        if not self.paired():
-            raise NotPairedException("Must be paired")
+        if not self.paired(): raise NotPairedException("Must be paired")
 
-        async with aiohttp.ClientSession(connector = self.conn) as session:
-            refresh_url = f"{api_base}/pairing/get_lounge_token_batch"
-            refresh_data = {"screen_ids": self.auth.screen_id}
-            async with session.post(url=refresh_url, data=refresh_data) as resp:
-                try:
-                    screens = await resp.json()
-                    screen = screens["screens"][0]
-                    self.auth.screen_id = screen["screenId"]
-                    self.auth.lounge_id_token = screen["loungeToken"]
-
-                    self._logger.info(
-                        "Refreshed auth, lounge id token %s", self.auth.lounge_id_token
-                    )
-
-                    return self.linked()
-                except:
-                    self._logger.exception("Refresh auth failed")
-                    return False
+        refresh_url = f"{api_base}/pairing/get_lounge_token_batch"
+        refresh_data = {"screen_ids": self.auth.screen_id}
+        async with self.session.post(url=refresh_url, data=refresh_data) as resp:
+            try:
+                screens = await resp.json()
+                screen = screens["screens"][0]
+                self.auth.screen_id = screen["screenId"]
+                self.auth.lounge_id_token = screen["loungeToken"]
+                self._logger.info(
+                    "Refreshed auth, lounge id token %s", self.auth.lounge_id_token
+                )
+                return self.linked()
+            except:
+                self._logger.exception("Refresh auth failed")
+                return False
 
     def store_auth_state(self) -> dict:
         """Return auth parameters as dict which can be serialized for later use"""
@@ -354,14 +350,13 @@ class YtLoungeApi:
         body = {"lounge_token": self.auth.lounge_id_token}
 
         url = f"{api_base}/pairing/get_screen_availability"
+        
+        result = await self.session.post(url=url, data=body)
+        status = await result.json()
+        if "screens" in status and len(status["screens"]) > 0:
+            return status["screens"][0]["status"] == "online"
 
-        async with aiohttp.ClientSession(connector = self.conn) as session:
-            result = await session.post(url=url, data=body)
-            status = await result.json()
-            if "screens" in status and len(status["screens"]) > 0:
-                return status["screens"][0]["status"] == "online"
-
-            return False
+        return False
 
     def get_thumbnail_url(self, thumbnail_idx=0) -> str:
         """Returns thumbnail for current video. Use thumbnail idx to get different thumbnails.
@@ -392,31 +387,29 @@ class YtLoungeApi:
         connect_url = (
             f"{api_base}/bc/bind?RID=1&VER=8&CVER=1&auth_failure_option=send_error"
         )
-        async with aiohttp.ClientSession(connector = self.conn) as session:
-            async with session.post(url=connect_url, data=connect_body) as resp:
-                try:
-                    text = await resp.text()
-                    if resp.status == 401:
-                        self._lounge_token_expired()
-                        return False
-
-                    if resp.status != 200:
-                        self._logger.warning(
-                            "Unknown reply to connect %i %s", resp.status, resp.reason
-                        )
-                        return False
-                    lines = text.splitlines()
-                    async for events in self._parse_event_chunks(desync(lines)):
-                        self._process_events(events)
-                    self._command_offset = 1
-                    return self.connected()
-                except:
-                    self._logger.exception(
-                        "Handle connect failed, status %s reason %s",
-                        resp.status,
-                        resp.reason,
+        async with self.session.post(url=connect_url, data=connect_body) as resp:
+            try:
+                text = await resp.text()
+                if resp.status == 401:
+                    self._lounge_token_expired()
+                    return False
+                if resp.status != 200:
+                    self._logger.warning(
+                        "Unknown reply to connect %i %s", resp.status, resp.reason
                     )
                     return False
+                lines = text.splitlines()
+                async for events in self._parse_event_chunks(desync(lines)):
+                    self._process_events(events)
+                self._command_offset = 1
+                return self.connected()
+            except:
+                self._logger.exception(
+                    "Handle connect failed, status %s reason %s",
+                    resp.status,
+                    resp.reason,
+                )
+                return False
 
     def _handle_session_result(self, status_code: int, reason: str) -> bool:
         if status_code == 400 and "Unknown SID" in reason:
@@ -452,31 +445,28 @@ class YtLoungeApi:
         }
         url = f"{api_base}/bc/bind"
         self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
-        async with aiohttp.ClientSession(timeout=ClientTimeout(), connector = self.conn) as session:
-            async with session.get(url=url, params=params) as resp:
-                try:
-                    if not self._handle_session_result(resp.status, resp.reason):
-                        return
-
-                    async for events in self._parse_event_chunks(
-                        iter_response_lines(resp.content)
-                    ):
-                        pre_state_update = self.state_update
-                        self._process_events(events)
-                        if pre_state_update != self.state_update:
-                            await callback(self.state)
-                        if not self.connected():
-                            break
-                    self._logger.info(
-                        "Subscribe completed, status %i %s", resp.status, resp.reason
-                    )
-
-                except:
-                    self._logger.exception(
-                        "Handle subscribe failed, status %s reason %s",
-                        resp.status,
-                        resp.reason,
-                    )
+        async with self.session.get(url=url, params=params) as resp:
+            try:
+                if not self._handle_session_result(resp.status, resp.reason):
+                    return
+                async for events in self._parse_event_chunks(
+                    iter_response_lines(resp.content)
+                ):
+                    pre_state_update = self.state_update
+                    self._process_events(events)
+                    if pre_state_update != self.state_update:
+                        await callback(self.state)
+                    if not self.connected():
+                        break
+                self._logger.info(
+                    "Subscribe completed, status %i %s", resp.status, resp.reason
+                )
+            except:
+                self._logger.exception(
+                    "Handle subscribe failed, status %s reason %s",
+                    resp.status,
+                    resp.reason,
+                )
 
     async def disconnect(self) -> bool:
         """Disconnect from the current session"""
@@ -503,17 +493,16 @@ class YtLoungeApi:
             "auth_failure_option": "send_error",
         }
         url = f"{api_base}/bc/bind"
-        async with aiohttp.ClientSession(connector = self.conn) as session:
-            async with session.post(url=url, data=command_body, params=params) as resp:
-                try:
-                    response_text = await resp.text()
-                    if not self._handle_session_result(resp.status, response_text):
-                        return False
-                    resp.raise_for_status()
-                    return True
-                except:
-                    self._logger.exception("Disconnect failed")
+        async with self.session.post(url=url, data=command_body, params=params) as resp:
+            try:
+                response_text = await resp.text()
+                if not self._handle_session_result(resp.status, response_text):
                     return False
+                resp.raise_for_status()
+                return True
+            except:
+                self._logger.exception("Disconnect failed")
+                return False
 
     async def _command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
@@ -539,17 +528,16 @@ class YtLoungeApi:
             "gsessionid": self._gsession,
         }
         url = f"{api_base}/bc/bind"
-        async with aiohttp.ClientSession(connector = self.conn) as session:
-            async with session.post(url=url, data=command_body, params=params) as resp:
-                try:
-                    response_text = await resp.text()
-                    if not self._handle_session_result(resp.status, response_text):
-                        return False
-                    resp.raise_for_status()
-                    return True
-                except:
-                    self._logger.exception("Command failed")
+        async with self.session.post(url=url, data=command_body, params=params) as resp:
+            try:
+                response_text = await resp.text()
+                if not self._handle_session_result(resp.status, response_text):
                     return False
+                resp.raise_for_status()
+                return True
+            except:
+                self._logger.exception("Command failed")
+                return False
 
     async def play(self) -> bool:
         """Sends play command to screen"""
