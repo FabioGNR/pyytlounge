@@ -198,7 +198,7 @@ class YtLoungeApi:
         await self.conn.close()
 
     def paired(self) -> bool:
-        """Returns true if screen id and lounge id token are known."""
+        """Returns true if screen id is known."""
         return self.auth.screen_id is not None
 
     def linked(self) -> bool:
