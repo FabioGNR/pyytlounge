@@ -25,6 +25,9 @@ tests = [
   'pytest',
   'pytest-mock',
 ]
+docs = [
+  'sphinx'
+]
 
 [build-system]
 requires = ["hatchling"]
