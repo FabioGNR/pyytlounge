@@ -184,10 +184,10 @@ class YtLoungeApi:
         self._screen_name: str = None
         self._device_info: __DeviceInfo = None
         self._logger = logger or logging.Logger(__package__, logging.DEBUG)
-
-    async def __aenter__(self):
         self.conn = aiohttp.TCPConnector(ttl_dns_cache=300)
         self.session = aiohttp.ClientSession(connector=self.conn)
+
+    async def __aenter__(self):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
