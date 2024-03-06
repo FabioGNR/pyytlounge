@@ -319,6 +319,7 @@ class YtLoungeApi:
             self.state = PlaybackState(self._logger)
             self._update_state()
             self._connection_lost()
+            self._lounge_token_expired()
         elif event_type == "noop":
             pass  # no-op
         else:
