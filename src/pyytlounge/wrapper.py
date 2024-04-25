@@ -7,7 +7,7 @@ from typing import Any, AsyncIterator, List, TypedDict, Union, Callable
 from dataclasses import dataclass
 
 import aiohttp
-from aiohttp import ClientTimeout, StreamReader
+from aiohttp import ClientTimeout, StreamReader, ClientPayloadError
 
 from .api import api_base
 
@@ -249,7 +249,7 @@ class YtLoungeApi:
                 return self.linked()
             except:
                 self._logger.exception("Pairing failed")
-                return False
+                raise
 
     async def refresh_auth(self) -> bool:
         """Refresh lounge token using stored refresh token."""
@@ -272,7 +272,7 @@ class YtLoungeApi:
                 return self.linked()
             except:
                 self._logger.exception("Refresh auth failed")
-                return False
+                raise
 
     def store_auth_state(self) -> dict:
         """Return auth parameters as dict which can be serialized for later use"""
@@ -424,7 +424,7 @@ class YtLoungeApi:
                     resp.status,
                     resp.reason,
                 )
-                return False
+                raise
 
     def _handle_session_result(self, status_code: int, reason: str) -> bool:
         if status_code == 400 and "Unknown SID" in reason:
@@ -477,13 +477,19 @@ class YtLoungeApi:
                 self._logger.info(
                     "Subscribe completed, status %i %s", resp.status, resp.reason
                 )
-
+            except ClientPayloadError:
+                self._logger.exception(
+                    "Handle subscribe payload error, status %s reason %s",
+                    resp.status,
+                    resp.reason
+                )
             except:
                 self._logger.exception(
                     "Handle subscribe failed, status %s reason %s",
                     resp.status,
                     resp.reason,
                 )
+                raise
 
     async def disconnect(self) -> bool:
         """Disconnect from the current session"""
@@ -519,7 +525,7 @@ class YtLoungeApi:
                 return True
             except:
                 self._logger.exception("Disconnect failed")
-                return False
+                raise
 
     async def _command(self, command: str, command_parameters: dict = None) -> bool:
         if not self.connected():
@@ -554,7 +560,7 @@ class YtLoungeApi:
                 return True
             except:
                 self._logger.exception("Command failed")
-                return False
+                raise
 
     async def play(self) -> bool:
         """Sends play command to screen"""
