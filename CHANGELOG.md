@@ -1,3 +1,16 @@
+# 2.0.0
+
+### Added
+
+- Documentation now available at https://readthedocs.org/projects/pyytlounge/
+
+### Changed
+
+- Aiohttp session is now reused to cache DNS responses
+- On loungeScreenDisconnected event the lounge token is invalidated.
+- BREAKING: the API must now be closed after use to properly clean up aiohttp sessions. Either use the `with` statement or manually call `.close()`.
+- BREAKING: the API will now raise unexpected exceptions instead of capturing them.
+
 # 1.7.0
 
 ### Changed
