@@ -12,8 +12,7 @@ logger.addHandler(console_handler)
 logger.setLevel(logging.DEBUG)
 
 async def go():
-    api = YtLoungeApi("Test", logger)
-    async with api:
+    async with YtLoungeApi("Test", logger) as api:
         if os.path.exists(AUTH_STATE_FILE):
             with open(AUTH_STATE_FILE, "r") as f:
                 content = f.read()
