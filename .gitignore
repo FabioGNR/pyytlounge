@@ -1,6 +1,5 @@
 .venv/
 __pycache__
-variables.py
 dist/
 auth_state
 docs/_build
