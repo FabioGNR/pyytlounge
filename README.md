@@ -1,4 +1,8 @@
-# YouTube Lounge API wrapper written in Python (WIP)
+# YouTube Lounge API wrapper written in Python
+
+![GitHub Release](https://img.shields.io/github/v/release/FabioGNR/pyytlounge)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/FabioGNR/pyytlounge/test.yml)
+[![Documentation Status](https://readthedocs.org/projects/pyytlounge/badge/?version=latest)](https://pyytlounge.readthedocs.io/en/latest/?badge=latest)
 
 ## Setup
 
@@ -6,10 +10,12 @@ Activate virtual environment:
 
 - create `python -m venv .venv`
 - activate `source .venv/bin/activate`
+- install package and its requirements `pip install -e .`
 
 ## How to use
 
 `python test.py` will run an interactive demo.
+View documentation on [readthedocs.io](https://pyytlounge.readthedocs.io/en/latest/?badge=latest).
 
 ## Release Notes
 
@@ -18,9 +24,3 @@ See [CHANGELOG](CHANGELOG.md).
 ## Thanks
 
 - https://github.com/henriquekano/youtube-lounge-api
-
-### Publish to pypi
-
-1. Update pyproject.toml
-2. `python -m build`
-3. `python -m twine upload dist/*`
