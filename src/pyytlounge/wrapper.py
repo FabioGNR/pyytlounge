@@ -234,7 +234,16 @@ class YtLoungeApi:
         model = self._device_info["model"]
         return f"{brand} {model}"
 
-    async def pair(self, pairing_code) -> bool:
+    async def pair_with_screen_id(
+        self, screen_id: str, screen_name: str | None = None
+    ) -> bool:
+        """Pair with a device using a known screen id
+        Optionally specify the screen name if already known"""
+        self.auth.screen_id = screen_id
+        self._screen_name = screen_name
+        return await self.refresh_auth()
+
+    async def pair(self, pairing_code: str) -> bool:
         """Pair with a device using a manual input pairing code"""
 
         pair_url = f"{api_base}/pairing/get_screen"
@@ -460,7 +469,9 @@ class YtLoungeApi:
         }
         url = f"{api_base}/bc/bind"
         self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
-        async with self.session.get(url=url, params=params, timeout=ClientTimeout()) as resp:
+        async with self.session.get(
+            url=url, params=params, timeout=ClientTimeout()
+        ) as resp:
             try:
                 if not self._handle_session_result(resp.status, resp.reason):
                     return
@@ -481,7 +492,7 @@ class YtLoungeApi:
                 self._logger.exception(
                     "Handle subscribe payload error, status %s reason %s",
                     resp.status,
-                    resp.reason
+                    resp.reason,
                 )
             except:
                 self._logger.exception(
