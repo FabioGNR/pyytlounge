@@ -1,3 +1,9 @@
+# 2.1.1
+
+### Changed
+
+- Fixed commands not working after refactor
+
 # 2.1.0
 
 ### Added
