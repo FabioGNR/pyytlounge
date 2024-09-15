@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from enum import Enum
-from typing import Any, AsyncIterator, List, TypedDict, Union, Callable
+from typing import Any, AsyncIterator, List, TypedDict, Union, Callable, Optional
 from dataclasses import dataclass
 
 import aiohttp
@@ -236,7 +236,7 @@ class YtLoungeApi:
         return f"{brand} {model}"
 
     async def pair_with_screen_id(
-        self, screen_id: str, screen_name: str | None = None
+        self, screen_id: str, screen_name: Optional[str] = None
     ) -> bool:
         """Pair with a device using a known screen id
         Optionally specify the screen name if already known"""
