@@ -1,5 +1,6 @@
 """Wrapper class for YouTube Lounge API"""
 
+import asyncio
 import json
 import logging
 from enum import Enum
@@ -494,6 +495,8 @@ class YtLoungeApi:
                     resp.status,
                     resp.reason,
                 )
+            except asyncio.CancelledError:
+                raise
             except:
                 self._logger.exception(
                     "Handle subscribe failed, status %s reason %s",
