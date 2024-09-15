@@ -3,171 +3,20 @@
 import asyncio
 import json
 import logging
-from enum import Enum
-from typing import Any, AsyncIterator, List, TypedDict, Union, Callable, Optional
-from dataclasses import dataclass
+from typing import Any, AsyncIterator, Dict, List, Callable, Optional
 
 import aiohttp
-from aiohttp import ClientTimeout, StreamReader, ClientPayloadError
+from aiohttp import ClientTimeout, ClientPayloadError
 
 from .api import api_base
-
-
-class State(Enum):
-    """Playback state"""
-
-    Stopped = -1
-    Buffering = 0  # unsure, happens between videos
-    Playing = 1
-    Paused = 2
-    Starting = 3  # unsure, only seen once
-    Advertisement = 1081
-
-
-class PlaybackStateData(TypedDict):
-    currentTime: str
-    duration: str
-    state: str
-
-
-class NowPlayingData(PlaybackStateData):
-    videoId: str
-
-
-class PlaybackState:
-    currentTime: float
-    duration: float
-    videoId: str
-    state: State
-
-    def __init__(
-        self, logger: logging.Logger, state: Union[NowPlayingData, None] = None
-    ):
-        self._logger = logger
-
-        if not state or "state" not in state:
-            self.currentTime = 0.0
-            self.duration = 0.0
-            self.videoId = ""
-            self.state = State.Stopped
-            return
-
-        self.apply_state(state)
-        self.videoId = state["videoId"]
-
-    def apply_state(self, state: PlaybackStateData):
-        self.currentTime = float(state["currentTime"])
-        self.duration = float(state["duration"])
-        try:
-            self.state = State(int(state["state"]))
-        except ValueError:
-            self._logger.warning(
-                "Unknown state %s %s. Assuming stopped state.", state["state"], state
-            )
-            self.state = State.Stopped
-
-    def __eq__(self, other):
-        return vars(self) == vars(other)
-
-    def __repr__(self):
-        return f"{self.state} - id: {self.videoId} pos: {self.currentTime} duration: {self.duration}"
-
-
-CURRENT_AUTH_VERSION = 0
-
-
-class AuthStateData(TypedDict):
-    version: int
-    screenId: str
-    loungeIdToken: str
-    refreshToken: str
-    expiry: int
-
-
-@dataclass
-class AuthState:
-    """Stores information used to authenticate with YouTube.
-    Can be serialized and deserialized for reuse."""
-
-    version: int
-    screen_id: str
-    lounge_id_token: str
-    refresh_token: str
-    expiry: int
-
-    def __init__(self):
-        super().__init__()
-        self.version = CURRENT_AUTH_VERSION
-        self.screen_id = None
-        self.lounge_id_token = None
-        self.refresh_token = None
-        self.expiry = None
-
-    def serialize(self) -> AuthStateData:
-        """Serializes the current state into a dictionary."""
-        return vars(self)
-
-    def deserialize(self, data: AuthStateData):
-        """Deserializes state from a dictionary into this object."""
-        if data["version"] == CURRENT_AUTH_VERSION:
-            for key in data:
-                setattr(self, key, data[key])
-
-
-class __DeviceInfo(TypedDict):
-    brand: str
-    model: str
-    os: str
-
-
-class __Device(TypedDict):
-    name: str
-    type: str
-    id: str
-    deviceInfo: str  # json string
-
-
-class __LoungeStatus(TypedDict):
-    devices: str  # json string containing list of __Device
-
-
-async def desync(iterator):
-    """Turns a synchronous iterator into an asynchronous iterator"""
-    for item in iterator:
-        yield item
-
-
-async def iter_response_lines(resp: StreamReader):
-    """Enumerate lines in response one at a time."""
-    while True:
-        line = await resp.readline()
-        if line:
-            yield line.decode()
-        else:
-            break
+from .models import PlaybackState, AuthState, _Device, _DeviceInfo, _LoungeStatus
+from .exceptions import NotConnectedException, NotLinkedException, NotPairedException
+from .util import as_aiter, iter_response_lines
 
 
 def get_thumbnail_url(video_id: str, thumbnail_idx=0) -> str:
     """Returns thumbnail for given video. Use thumbnail idx to get different thumbnails."""
     return f"https://img.youtube.com/vi/{video_id}/{thumbnail_idx}.jpg"
-
-
-class NotConnectedException(Exception):
-    """This exception indicates an operation that failed due to an incorrect state.
-    The operation requires that there is an active connection to the API.
-    Use the connected() and connect() functions on YtLoungeApi."""
-
-
-class NotPairedException(Exception):
-    """This exception indicates an operation that failed due to an incorrect state.
-    The operation requires that the API has been paired with a screen.
-    Use the paired() and pair() functions on YtLoungeApi."""
-
-
-class NotLinkedException(Exception):
-    """This exception indicates an operation that failed due to an incorrect state.
-    The operation requires that the API has been linked with a screen.
-    Use the linked(), pair() and refresh_auth() functions on YtLoungeApi."""
 
 
 class YtLoungeApi:
@@ -183,7 +32,7 @@ class YtLoungeApi:
         self.state_update = 0
         self._command_offset = 1
         self._screen_name: str = None
-        self._device_info: __DeviceInfo = None
+        self._device_info: _DeviceInfo = None
         self._logger = logger or logging.Logger(__package__, logging.DEBUG)
         self.conn = aiohttp.TCPConnector(ttl_dns_cache=300)
         self.session = aiohttp.ClientSession(connector=self.conn)
@@ -308,7 +157,7 @@ class YtLoungeApi:
         self._gsession = None
         self._last_event_id = None
 
-    def _process_event(self, event_id: int, event_type: str, args):
+    def _process_event(self, event_type: str, args: List[Any]):
         if event_type == "onStateChange":
             data = args[0]
             self.state.apply_state(data)
@@ -318,8 +167,8 @@ class YtLoungeApi:
             self.state = PlaybackState(self._logger, data)
             self._update_state()
         elif event_type == "loungeStatus":
-            data: __LoungeStatus = args[0]
-            devices: List[__Device] = json.loads(data["devices"])
+            data: _LoungeStatus = args[0]
+            devices: List[_Device] = json.loads(data["devices"])
             for device in devices:
                 if device["type"] == "LOUNGE_SCREEN":
                     self._screen_name = device["name"]
@@ -337,13 +186,13 @@ class YtLoungeApi:
 
     def _process_events(self, events):
         for event in events:
-            event_id, (event_type, *args) = event
+            _event_id, (event_type, *args) = event
             if event_type == "c":
                 self._sid = args[0]
             elif event_type == "S":
                 self._gsession = args[0]
             else:
-                self._process_event(event_id, event_type, args)
+                self._process_event(event_type, args)
 
         last_id = events[-1][0]
         self._last_event_id = last_id
@@ -424,7 +273,7 @@ class YtLoungeApi:
                     )
                     return False
                 lines = text.splitlines()
-                async for events in self._parse_event_chunks(desync(lines)):
+                async for events in self._parse_event_chunks(as_aiter(lines)):
                     self._process_events(events)
                 self._command_offset = 1
                 return self.connected()
@@ -449,23 +298,28 @@ class YtLoungeApi:
             return False
         return True
 
+    def _common_connection_parameters(self) -> Dict[str, Any]:
+        return {
+            "name": self.device_name,
+            "loungeIdToken": self.auth.lounge_id_token,
+            "SID": self._sid,
+            "AID": self._last_event_id,
+            "gsessionid": self._gsession,
+            "device": "REMOTE_CONTROL",
+            "app": "youtube-desktop",
+            "VER": "8",
+            "v": "2",
+        }
+
     async def subscribe(self, callback: Callable[[PlaybackState], Any]) -> None:
         """Start listening for events"""
         if not self.connected():
             raise NotConnectedException("Not connected")
 
         params = {
-            "device": "REMOTE_CONTROL",
-            "name": self.device_name,
-            "app": "youtube-desktop",
-            "loungeIdToken": self.auth.lounge_id_token,
-            "VER": "8",
-            "v": "2",
+            **self._common_connection_parameters(),
             "RID": "rpc",
-            "SID": self._sid,
             "CI": "0",
-            "AID": self._last_event_id,
-            "gsessionid": self._gsession,
             "TYPE": "xmlhttp",
         }
         url = f"{api_base}/bc/bind"
@@ -516,17 +370,9 @@ class YtLoungeApi:
             "clientDisconnectReason": "MDX_SESSION_DISCONNECT_REASON_DISCONNECTED_BY_USER",
         }
         params = {
-            "device": "REMOTE_CONTROL",
-            "name": self.device_name,
-            "app": "youtube-desktop",
-            "loungeIdToken": self.auth.lounge_id_token,
-            "VER": "8",
-            "v": "2",
+            **self._common_connection_parameters(),
             "CVER": "1",
             "RID": self._command_offset,
-            "SID": self._sid,
-            "AID": self._last_event_id,
-            "gsessionid": self._gsession,
             "auth_failure_option": "send_error",
         }
         url = f"{api_base}/bc/bind"
@@ -553,16 +399,7 @@ class YtLoungeApi:
 
         self._command_offset += 1
         params = {
-            "device": "REMOTE_CONTROL",
-            "name": self.device_name,
-            "app": "youtube-desktop",
-            "loungeIdToken": self.auth.lounge_id_token,
-            "VER": "8",
-            "v": "2",
-            "RID": self._command_offset,
-            "SID": self._sid,
-            "AID": self._last_event_id,
-            "gsessionid": self._gsession,
+            **self._common_connection_parameters(),
         }
         url = f"{api_base}/bc/bind"
         async with self.session.post(url=url, data=command_body, params=params) as resp:

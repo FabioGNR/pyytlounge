@@ -8,5 +8,5 @@ import pyytlounge
 
 
 @pytest.fixture
-def wrapper():
+async def api():
     return pyytlounge.YtLoungeApi("Tester")
