@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.8'
     - name: Install dependencies
@@ -31,12 +31,12 @@ jobs:
       run: |
          pytest tests/ --junitxml=junit/test-results.xml
     - name: Test summary
-      uses: test-summary/action@v2.1
+      uses: test-summary/action@v2.4
       with:
         paths: junit/test-results.xml
       if: always()
     - name: Upload results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pytest-results
         path: junit/test-results.xml
