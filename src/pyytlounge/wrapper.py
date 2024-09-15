@@ -400,6 +400,7 @@ class YtLoungeApi:
         self._command_offset += 1
         params = {
             **self._common_connection_parameters(),
+            "RID": self._command_offset,
         }
         url = f"{api_base}/bc/bind"
         async with self.session.post(url=url, data=command_body, params=params) as resp:
