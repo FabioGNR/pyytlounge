@@ -1,3 +1,15 @@
+# 2.1.0
+
+### Added
+
+- `pyytlounge.dial.get_screen_id_from_dial()` when given a DIAl endpoint, can retrieve a YouTube screen's ID for pairing.
+  With thanks to @dmunozv04 for his implementation in [iSponsorBlockTV](https://github.com/dmunozv04/iSponsorBlockTV) which served as inspiration
+
+### Changed
+
+- Internal refactor, shouldn't be noticable unless internal classes were being used
+- `YtLoungeApi.subscribe()` no longer logs `asyncio.CancelledError()`
+
 # 2.0.0
 
 ### Added
