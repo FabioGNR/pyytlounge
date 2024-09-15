@@ -15,6 +15,7 @@ The API has functions for controlling the device and to receive status updates f
    :caption: Contents:
 
    usage
+   discovery
    api
 
 

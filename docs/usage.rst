@@ -17,10 +17,10 @@ Create an instance of the :class:`pyytlounge.YtLoungeApi` class, which takes a d
 
 .. code-block:: python
 
-    with YtLoungeApi('Test client') as api:
+    async with YtLoungeApi('Test client') as api:
         ...
 
-As you can see `with ...:` is used. The class is an asynchronous context manager as on close it needs to clean up the aiohttp session.
+As you can see `async with ...:` is used. The class is an asynchronous context manager as on close it needs to clean up the aiohttp session.
 Alternatively, you can call `.close()` manually:
 
 .. code-block:: python
