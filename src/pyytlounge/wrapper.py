@@ -125,7 +125,7 @@ class YtLoungeApi:
                 self.auth.lounge_id_token = screen["loungeToken"]
 
                 self._logger.info(
-                    "Refreshed auth, lounge id token %s", self.auth.lounge_id_token
+                    f"Refreshed auth, lounge id token {self.auth.lounge_id_token}"
                 )
 
                 return self.linked()
@@ -182,7 +182,7 @@ class YtLoungeApi:
         elif event_type == "noop":
             pass  # no-op
         else:
-            self._logger.debug("Unprocessed event %s %s", event_type, args)
+            self._logger.debug(f"Unprocessed event {event_type} {args}")
 
     def _process_events(self, events):
         for event in events:
@@ -269,7 +269,7 @@ class YtLoungeApi:
 
                 if resp.status != 200:
                     self._logger.warning(
-                        "Unknown reply to connect %i %s", resp.status, resp.reason
+                        f"Unknown reply to connect {resp.status} {resp.reason}"
                     )
                     return False
                 lines = text.splitlines()
@@ -279,9 +279,7 @@ class YtLoungeApi:
                 return self.connected()
             except:
                 self._logger.exception(
-                    "Handle connect failed, status %s reason %s",
-                    resp.status,
-                    resp.reason,
+                    f"Handle connect failed, status {resp.status} reason {resp.reason}",
                 )
                 raise
 
@@ -323,7 +321,7 @@ class YtLoungeApi:
             "TYPE": "xmlhttp",
         }
         url = f"{api_base}/bc/bind"
-        self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
+        self._logger.info(f"Subscribing to lounge id {self.auth.lounge_id_token}")
         async with self.session.get(
             url=url, params=params, timeout=ClientTimeout()
         ) as resp:
@@ -341,21 +339,17 @@ class YtLoungeApi:
                     if not self.connected():
                         break
                 self._logger.info(
-                    "Subscribe completed, status %i %s", resp.status, resp.reason
+                    f"Subscribe completed, status {resp.status} {resp.reason}"
                 )
             except ClientPayloadError:
                 self._logger.exception(
-                    "Handle subscribe payload error, status %s reason %s",
-                    resp.status,
-                    resp.reason,
+                    f"Handle subscribe payload error, status {resp.status} reason {resp.reason}"
                 )
             except asyncio.CancelledError:
                 raise
             except:
                 self._logger.exception(
-                    "Handle subscribe failed, status %s reason %s",
-                    resp.status,
-                    resp.reason,
+                    f"Handle subscribe failed, status {resp.status} reason {resp.reason}"
                 )
                 raise
 
