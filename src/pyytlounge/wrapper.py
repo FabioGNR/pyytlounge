@@ -34,11 +34,18 @@ class YtLoungeApi:
         self._screen_name: str = None
         self._device_info: _DeviceInfo = None
         self._logger = logger or logging.Logger(__package__, logging.DEBUG)
-        self.conn = aiohttp.TCPConnector(ttl_dns_cache=300)
-        self.session = aiohttp.ClientSession(connector=self.conn)
+        # Initialize these as None - they'll be set up in __aenter__
+        self.conn: Optional[aiohttp.TCPConnector] = None 
+        self.session: Optional[aiohttp.ClientSession] = None
 
     async def __aenter__(self):
-        return self
+        try:
+            self.conn = aiohttp.TCPConnector(ttl_dns_cache=300)
+            self.session = aiohttp.ClientSession(connector=self.conn)
+            return self
+        except Exception:
+            await self.close()
+            raise
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.close()
