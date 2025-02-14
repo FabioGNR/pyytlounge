@@ -1,19 +1,20 @@
 [project]
 name = "pyytlounge"
-version = "2.1.1"
+version = "2.1.2"
 authors = [
   { name="Fabio", email="example@example.com" },
+  { name="Berty", email="example@example.com" },
 ]
 description = "YouTube Lounge API wrapper"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-  'aiohttp>=3.8.4',
+  'aiohttp>=3.11.12',
 ]
 
 [project.urls]
