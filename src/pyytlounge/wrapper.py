@@ -32,10 +32,10 @@ class YtLoungeApi:
         self.state_update = 0
         self._command_offset = 1
         self._screen_name: str = None
-        self._device_info: _DeviceInfo = None
+        self._device_info: _DeviceInfo | None = None
         self._logger = logger or logging.Logger(__package__, logging.DEBUG)
         # Initialize these as None - they'll be set up in __aenter__
-        self.conn: Optional[aiohttp.TCPConnector] = None 
+        self.conn: Optional[aiohttp.TCPConnector] = None
         self.session: Optional[aiohttp.ClientSession] = None
 
     async def __aenter__(self):
@@ -83,10 +83,13 @@ class YtLoungeApi:
         return self._screen_name
 
     @property
-    def screen_device_name(self) -> str:
-        """Returns device name built from device info returned by YouTube"""
+    def screen_device_name(self) -> str | None:
+        """Returns device name built from device info returned by YouTube.
+        Returns None if not yet initialized or information was not sent."""
         if not self.connected():
             raise NotConnectedException("Not connected")
+        if not self._device_info:
+            return None
         brand = self._device_info["brand"]
         model = self._device_info["model"]
         return f"{brand} {model}"
