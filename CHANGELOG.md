@@ -1,3 +1,13 @@
+# 2.2.0
+
+### Added
+
+- play_video command: play given video using its id @bertybuttface
+
+### Changed
+
+- Fixed exception when using `screen_device_name` before data was received
+
 # 2.1.2
 
 ### Changed
