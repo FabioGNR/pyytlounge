@@ -1,3 +1,9 @@
+# 2.2.1
+
+### Changed
+
+- Fixed compatibility with Python 3.9
+
 # 2.2.0
 
 ### Added
