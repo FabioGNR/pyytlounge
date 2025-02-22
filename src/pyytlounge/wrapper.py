@@ -425,6 +425,10 @@ class YtLoungeApi:
         """Sends play command to screen"""
         return await self._command("play")
 
+    async def play_video(self, video_id: str) -> bool:
+        """Sends setPlaylist command to screen to play a specific video"""
+        return await self._command("setPlaylist", {"videoId": video_id})
+
     async def pause(self) -> bool:
         """Sends pause command to screen"""
         return await self._command("pause")
