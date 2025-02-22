@@ -1,8 +1,10 @@
+"""Script to test the API client with a screen"""
+
 import asyncio
-from src.pyytlounge.wrapper import YtLoungeApi, PlaybackState, State
 from ast import literal_eval
 import os
 import logging
+from src.pyytlounge.wrapper import YtLoungeApi, PlaybackState
 
 AUTH_STATE_FILE = "auth_state"
 logger = logging.getLogger(__name__)
@@ -11,10 +13,11 @@ console_handler.setLevel(logging.DEBUG)
 logger.addHandler(console_handler)
 logger.setLevel(logging.DEBUG)
 
+
 async def go():
     async with YtLoungeApi("Test", logger) as api:
         if os.path.exists(AUTH_STATE_FILE):
-            with open(AUTH_STATE_FILE, "r") as f:
+            with open(AUTH_STATE_FILE, "r", encoding="utf-8") as f:
                 content = f.read()
                 api.load_auth_state(literal_eval(content))
                 print("Loaded from file")
@@ -26,7 +29,7 @@ async def go():
             if not paired:
                 exit()
             auth_state = api.auth.serialize()
-            with open(AUTH_STATE_FILE, "w") as f:
+            with open(AUTH_STATE_FILE, "w", encoding="utf-8") as f:
                 f.write(str(auth_state))
         print(api)
         is_available = await api.is_available()
@@ -41,7 +44,10 @@ async def go():
         print(f"Screen: {api.screen_name}")
         print(f"Device: {api.screen_device_name}")
 
+        await api.play_video("dQw4w9WgXcQ")
+
         last_video_id = None
+
         async def receive_state(state: PlaybackState):
             nonlocal last_video_id
             print(f"New state: {state}")
