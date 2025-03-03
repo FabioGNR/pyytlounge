@@ -455,3 +455,7 @@ class YtLoungeApi:
     async def set_volume(self, volume: int) -> bool:
         """Sets volume to given value (0-100)"""
         return await self._command("setVolume", {"volume": volume})
+
+    async def set_playback_speed(self, speed: float) -> bool:
+        """Sets the playback speed to given value (0.25-2)"""
+        return await self._command("setPlaybackSpeed", {"playbackSpeed": speed})
