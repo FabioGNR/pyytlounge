@@ -455,3 +455,11 @@ class YtLoungeApi:
     async def set_volume(self, volume: int) -> bool:
         """Sets volume to given value (0-100)"""
         return await self._command("setVolume", {"volume": volume})
+
+    async def set_playback_speed(self, speed: float) -> bool:
+        """Sets the playback speed to given value (0.25-2)"""
+        return await self._command("setPlaybackSpeed", {"playbackSpeed": speed})
+
+    async def send_dpad_command(self, button_input: str) -> bool:
+        """Sends a dpad command like a remote. Acceptable values: [UP,DOWN,RIGHT,LEFT,ENTER,BACK]"""
+        return await self._command("dpadCommand", {"key": button_input.upper()})
