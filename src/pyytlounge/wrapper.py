@@ -460,6 +460,6 @@ class YtLoungeApi:
         """Sets the playback speed to given value (0.25-2)"""
         return await self._command("setPlaybackSpeed", {"playbackSpeed": speed})
 
-    async def send_dpad_command(self, input: str) -> bool:
+    async def send_dpad_command(self, button_input: str) -> bool:
         """Sends a dpad command like a remote. Acceptable values: [UP,DOWN,RIGHT,ENTER,BACK]"""
-        return await self._command("dpadCommand", {"key": input.upper()})
+        return await self._command("dpadCommand", {"key": button_input.upper()})
