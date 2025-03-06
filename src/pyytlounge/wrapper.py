@@ -452,6 +452,11 @@ class YtLoungeApi:
         """Skips ad if possible"""
         return await self._command("skipAd")
 
+    async def set_auto_play_mode(self, enabled: bool) -> bool:
+        return await self._command(
+            "setAutoplayMode", {"autoplayMode": "ENABLED" if enabled else "DISABLED"}
+        )
+
     async def set_volume(self, volume: int) -> bool:
         """Sets volume to given value (0-100)"""
         return await self._command("setVolume", {"volume": volume})
