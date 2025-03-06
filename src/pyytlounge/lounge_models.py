@@ -15,6 +15,15 @@ class _NowPlayingData(_PlaybackStateData):
     videoId: str
 
 
+class _VolumeChangedData(TypedDict):
+    volume: str
+    muted: str
+
+
+class _AutoplayModeChangedData(TypedDict):
+    autoplayMode: str
+
+
 class _DeviceInfo(TypedDict):
     brand: str
     model: str

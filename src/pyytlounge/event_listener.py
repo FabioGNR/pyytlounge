@@ -1,6 +1,11 @@
 from abc import ABC
 
-from .events import NowPlayingEvent, PlaybackStateEvent
+from .events import (
+    NowPlayingEvent,
+    PlaybackStateEvent,
+    VolumeChangedEvent,
+    AutoplayModeChangedEvent,
+)
 
 
 class EventListener(ABC):
@@ -14,6 +19,12 @@ class EventListener(ABC):
 
     async def now_playing_changed(self, event: NowPlayingEvent) -> None:
         """Called when active video changes"""
+
+    async def volume_changed(self, event: VolumeChangedEvent) -> None:
+        """Called when volume or muted state changes"""
+
+    async def autoplay_changed(self, event: AutoplayModeChangedEvent) -> None:
+        """Called when auto play mode changes"""
 
     async def disconnected(self) -> None:
         """Called when the screen is no longer connected"""
