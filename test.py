@@ -4,7 +4,13 @@ import asyncio
 from ast import literal_eval
 import os
 import logging
-from src.pyytlounge.wrapper import YtLoungeApi, PlaybackState
+from typing import Optional
+from src.pyytlounge import (
+    YtLoungeApi,
+    EventListener,
+    PlaybackStateEvent,
+    NowPlayingEvent,
+)
 
 AUTH_STATE_FILE = "auth_state"
 logger = logging.getLogger(__name__)
@@ -12,6 +18,31 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 logger.addHandler(console_handler)
 logger.setLevel(logging.DEBUG)
+
+
+class DebugEventListener(EventListener):
+    def __init__(self):
+        self.last_video_id: Optional[str] = None
+
+    async def playback_state_changed(self, event: PlaybackStateEvent) -> None:
+        """Called when playback state changes (position, play/pause)"""
+        print(
+            f"New state: {event.state} = id: {self.last_video_id} pos: {event.current_time} duration: {event.duration}"
+        )
+
+    async def now_playing_changed(self, event: NowPlayingEvent) -> None:
+        """Called when active video changes"""
+        print(
+            f"New state: {event.state} = id: {event.video_id} pos: {event.current_time} duration: {event.duration}"
+        )
+        if event.video_id and event.video_id != self.last_video_id:
+            print(f"Image should be at: {event.get_thumbnail_url()}")
+        self.last_video_id = event.video_id
+
+    async def disconnected(self) -> None:
+        """Called when the screen is no longer connected"""
+        print("Disconnected")
+        self.last_video_id = None
 
 
 async def go():
@@ -46,18 +77,8 @@ async def go():
 
         await api.play_video("dQw4w9WgXcQ")
 
-        last_video_id = None
-
-        async def receive_state(state: PlaybackState):
-            nonlocal last_video_id
-            print(f"New state: {state}")
-            if state.videoId and state.videoId != last_video_id:
-                last_video_id = state.videoId
-                print(
-                    f"Image should be at: https://img.youtube.com/vi/{state.videoId}/0.jpg"
-                )
-
-        await api.subscribe(receive_state)
+        listener = DebugEventListener()
+        await api.subscribe(listener)
 
 
 asyncio.run(go())

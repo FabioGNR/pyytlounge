@@ -3,20 +3,19 @@
 import asyncio
 import json
 import logging
-from typing import Any, AsyncIterator, Dict, List, Callable, Optional
+from typing import Any, AsyncIterator, Dict, List, Optional
 
 import aiohttp
 from aiohttp import ClientTimeout, ClientPayloadError
 
 from .api import api_base
-from .models import PlaybackState, AuthState, _Device, _DeviceInfo, _LoungeStatus
+from .api import get_thumbnail_url  # noqa # we want to export this from this module
+from .event_listener import EventListener, _EmptyListener
+from .events import PlaybackStateEvent, NowPlayingEvent
+from .models import AuthState
+from .lounge_models import _Device, _DeviceInfo, _LoungeStatus
 from .exceptions import NotConnectedException, NotLinkedException, NotPairedException
 from .util import as_aiter, iter_response_lines
-
-
-def get_thumbnail_url(video_id: str, thumbnail_idx=0) -> str:
-    """Returns thumbnail for given video. Use thumbnail idx to get different thumbnails."""
-    return f"https://img.youtube.com/vi/{video_id}/{thumbnail_idx}.jpg"
 
 
 class YtLoungeApi:
@@ -28,8 +27,7 @@ class YtLoungeApi:
         self._sid = None
         self._gsession = None
         self._last_event_id = None
-        self.state = PlaybackState(logger)
-        self.state_update = 0
+        self.event_listener: EventListener = _EmptyListener()
         self._command_offset = 1
         self._screen_name: str = None
         self._device_info: Optional[_DeviceInfo] = None
@@ -94,9 +92,7 @@ class YtLoungeApi:
         model = self._device_info["model"]
         return f"{brand} {model}"
 
-    async def pair_with_screen_id(
-        self, screen_id: str, screen_name: Optional[str] = None
-    ) -> bool:
+    async def pair_with_screen_id(self, screen_id: str, screen_name: Optional[str] = None) -> bool:
         """Pair with a device using a known screen id
         Optionally specify the screen name if already known"""
         self.auth.screen_id = screen_id
@@ -134,9 +130,7 @@ class YtLoungeApi:
                 self.auth.screen_id = screen["screenId"]
                 self.auth.lounge_id_token = screen["loungeToken"]
 
-                self._logger.info(
-                    "Refreshed auth, lounge id token %s", self.auth.lounge_id_token
-                )
+                self._logger.info("Refreshed auth, lounge id token %s", self.auth.lounge_id_token)
 
                 return self.linked()
             except:
@@ -156,9 +150,6 @@ class YtLoungeApi:
         self.auth = AuthState()
         self.auth.deserialize(data)
 
-    def _update_state(self):
-        self.state_update = self.state_update + 1
-
     def _lounge_token_expired(self):
         self.auth.lounge_id_token = None
 
@@ -167,15 +158,11 @@ class YtLoungeApi:
         self._gsession = None
         self._last_event_id = None
 
-    def _process_event(self, event_type: str, args: List[Any]):
-        if event_type == "onStateChange":
-            data = args[0]
-            self.state.apply_state(data)
-            self._update_state()
+    async def _process_event(self, event_type: str, args: List[Any]):
+        if event_type == "onStateChange" and self.event_listener:
+            await self.event_listener.playback_state_changed(PlaybackStateEvent(args[0]))
         elif event_type == "nowPlaying":
-            data = args[0]
-            self.state = PlaybackState(self._logger, data)
-            self._update_state()
+            await self.event_listener.now_playing_changed(NowPlayingEvent(args[0]))
         elif event_type == "loungeStatus":
             data: _LoungeStatus = args[0]
             devices: List[_Device] = json.loads(data["devices"])
@@ -185,8 +172,7 @@ class YtLoungeApi:
                     self._device_info = json.loads(device.get("deviceInfo", "null"))
                     break
         elif event_type == "loungeScreenDisconnected":
-            self.state = PlaybackState(self._logger)
-            self._update_state()
+            await self.event_listener.disconnected()
             self._connection_lost()
             self._lounge_token_expired()
         elif event_type == "noop":
@@ -194,7 +180,7 @@ class YtLoungeApi:
         else:
             self._logger.debug("Unprocessed event %s %s", event_type, args)
 
-    def _process_events(self, events):
+    async def _process_events(self, events):
         for event in events:
             _event_id, (event_type, *args) = event
             if event_type == "c":
@@ -202,7 +188,7 @@ class YtLoungeApi:
             elif event_type == "S":
                 self._gsession = args[0]
             else:
-                self._process_event(event_type, args)
+                await self._process_event(event_type, args)
 
         last_id = events[-1][0]
         self._last_event_id = last_id
@@ -241,13 +227,6 @@ class YtLoungeApi:
 
         return False
 
-    def get_thumbnail_url(self, thumbnail_idx=0) -> str:
-        """Returns thumbnail for current video. Use thumbnail idx to get different thumbnails.
-        Returns None if no video is set."""
-        if not self.state.videoId:
-            return None
-        return get_thumbnail_url(self.state.videoId, thumbnail_idx)
-
     async def connect(self) -> bool:
         """Attempt to connect using the previously set tokens"""
         if not self.linked():
@@ -267,9 +246,7 @@ class YtLoungeApi:
             "theme": "cl",
             "loungeIdToken": self.auth.lounge_id_token,
         }
-        connect_url = (
-            f"{api_base}/bc/bind?RID=1&VER=8&CVER=1&auth_failure_option=send_error"
-        )
+        connect_url = f"{api_base}/bc/bind?RID=1&VER=8&CVER=1&auth_failure_option=send_error"
         async with self.session.post(url=connect_url, data=connect_body) as resp:
             try:
                 text = await resp.text()
@@ -278,13 +255,11 @@ class YtLoungeApi:
                     return False
 
                 if resp.status != 200:
-                    self._logger.warning(
-                        "Unknown reply to connect %i %s", resp.status, resp.reason
-                    )
+                    self._logger.warning("Unknown reply to connect %i %s", resp.status, resp.reason)
                     return False
                 lines = text.splitlines()
                 async for events in self._parse_event_chunks(as_aiter(lines)):
-                    self._process_events(events)
+                    await self._process_events(events)
                 self._command_offset = 1
                 return self.connected()
             except:
@@ -321,10 +296,12 @@ class YtLoungeApi:
             "v": "2",
         }
 
-    async def subscribe(self, callback: Callable[[PlaybackState], Any]) -> None:
+    async def subscribe(self, listener: EventListener) -> None:
         """Start listening for events"""
         if not self.connected():
             raise NotConnectedException("Not connected")
+
+        self.event_listener = listener
 
         params = {
             **self._common_connection_parameters(),
@@ -334,25 +311,16 @@ class YtLoungeApi:
         }
         url = f"{api_base}/bc/bind"
         self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
-        async with self.session.get(
-            url=url, params=params, timeout=ClientTimeout()
-        ) as resp:
+        async with self.session.get(url=url, params=params, timeout=ClientTimeout()) as resp:
             try:
                 if not self._handle_session_result(resp.status, resp.reason):
                     return
 
-                async for events in self._parse_event_chunks(
-                    iter_response_lines(resp.content)
-                ):
-                    pre_state_update = self.state_update
-                    self._process_events(events)
-                    if pre_state_update != self.state_update:
-                        await callback(self.state)
+                async for events in self._parse_event_chunks(iter_response_lines(resp.content)):
+                    await self._process_events(events)
                     if not self.connected():
                         break
-                self._logger.info(
-                    "Subscribe completed, status %i %s", resp.status, resp.reason
-                )
+                self._logger.info("Subscribe completed, status %i %s", resp.status, resp.reason)
             except ClientPayloadError:
                 self._logger.exception(
                     "Handle subscribe payload error, status %s reason %s",
