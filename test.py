@@ -10,6 +10,8 @@ from src.pyytlounge import (
     EventListener,
     PlaybackStateEvent,
     NowPlayingEvent,
+    VolumeChangedEvent,
+    AutoplayModeChangedEvent,
 )
 
 AUTH_STATE_FILE = "auth_state"
@@ -38,6 +40,16 @@ class DebugEventListener(EventListener):
         if event.video_id and event.video_id != self.last_video_id:
             print(f"Image should be at: {event.get_thumbnail_url()}")
         self.last_video_id = event.video_id
+
+    async def volume_changed(self, event: VolumeChangedEvent) -> None:
+        """Called when volume or muted state changes"""
+        print(f"Volume changed: {event.volume}% muted: {event.muted}")
+
+    async def autoplay_changed(self, event: AutoplayModeChangedEvent) -> None:
+        """Called when auto play mode changes"""
+        print(
+            f"Auto play changed: {event.enabled} {'(not supported)' if not event.supported else ''}"
+        )
 
     async def disconnected(self) -> None:
         """Called when the screen is no longer connected"""

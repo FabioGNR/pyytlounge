@@ -11,7 +11,12 @@ from aiohttp import ClientTimeout, ClientPayloadError
 from .api import api_base
 from .api import get_thumbnail_url  # noqa # we want to export this from this module
 from .event_listener import EventListener, _EmptyListener
-from .events import PlaybackStateEvent, NowPlayingEvent
+from .events import (
+    PlaybackStateEvent,
+    NowPlayingEvent,
+    VolumeChangedEvent,
+    AutoplayModeChangedEvent,
+)
 from .models import AuthState
 from .lounge_models import _Device, _DeviceInfo, _LoungeStatus
 from .exceptions import NotConnectedException, NotLinkedException, NotPairedException
@@ -163,6 +168,10 @@ class YtLoungeApi:
             await self.event_listener.playback_state_changed(PlaybackStateEvent(args[0]))
         elif event_type == "nowPlaying":
             await self.event_listener.now_playing_changed(NowPlayingEvent(args[0]))
+        elif event_type == "onVolumeChanged":
+            await self.event_listener.volume_changed(VolumeChangedEvent(args[0]))
+        elif event_type == "onAutoplayModeChanged":
+            await self.event_listener.autoplay_changed(AutoplayModeChangedEvent(args[0]))
         elif event_type == "loungeStatus":
             data: _LoungeStatus = args[0]
             devices: List[_Device] = json.loads(data["devices"])
