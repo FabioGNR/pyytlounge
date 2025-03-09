@@ -259,7 +259,7 @@ class YtLoungeApi:
             "name": self.device_name,
             "id": self.auth.screen_id,
             "device": "REMOTE_CONTROL",
-            "capabilities": "que,dsdtr,atp",
+            "capabilities": "que,dsdtr,atp,vsp",
             "method": "setPlaylist",
             "magnaKey": "cloudPairedDevice",
             "ui": "false",
