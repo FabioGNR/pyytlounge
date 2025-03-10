@@ -24,15 +24,29 @@ from .util import as_aiter, iter_response_lines
 
 
 class YtLoungeApi:
-    """Wrapper class for YouTube Lounge API"""
+    """YouTube Lounge API"""
 
-    def __init__(self, device_name: str, logger: logging.Logger = None):
+    def __init__(
+        self,
+        device_name: str,
+        event_listener: Optional[EventListener] = None,
+        logger: Optional[logging.Logger] = None,
+    ):
+        """Create an instance of the API which can connect to a single screen
+
+        :param device_name: This name will show up on the screen
+        :param event_listener: Setting a listener allows you to receive updates from the screen
+        :param logger: Override the logger with something custom
+        """
         self.device_name = device_name
         self.auth = AuthState()
         self._sid = None
         self._gsession = None
         self._last_event_id = None
-        self.event_listener: EventListener = _EmptyListener()
+        if event_listener:
+            self.event_listener = event_listener
+        else:
+            self.event_listener: EventListener = _EmptyListener()
         self._command_offset = 1
         self._screen_name: str = None
         self._device_info: Optional[_DeviceInfo] = None
@@ -305,12 +319,10 @@ class YtLoungeApi:
             "v": "2",
         }
 
-    async def subscribe(self, listener: EventListener) -> None:
-        """Start listening for events"""
+    async def subscribe(self) -> None:
+        """Start listening for events. Updates will be sent to the event_listener passed when creating this object."""
         if not self.connected():
             raise NotConnectedException("Not connected")
-
-        self.event_listener = listener
 
         params = {
             **self._common_connection_parameters(),

@@ -58,7 +58,8 @@ class DebugEventListener(EventListener):
 
 
 async def go():
-    async with YtLoungeApi("Test", logger) as api:
+    listener = DebugEventListener()
+    async with YtLoungeApi("Test", listener, logger) as api:
         if os.path.exists(AUTH_STATE_FILE):
             with open(AUTH_STATE_FILE, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -89,8 +90,7 @@ async def go():
 
         await api.play_video("dQw4w9WgXcQ")
 
-        listener = DebugEventListener()
-        await api.subscribe(listener)
+        await api.subscribe()
 
 
 asyncio.run(go())
