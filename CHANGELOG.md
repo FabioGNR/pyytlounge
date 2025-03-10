@@ -1,3 +1,10 @@
+# 2.3.0
+
+### Added
+
+- Add `vsp` capability which allows receiving `playbackSpeed` events @dmunozv04
+- `set_auto_play_mode` command: toggle auto play @bertybuttface
+
 # 2.2.1
 
 ### Changed
