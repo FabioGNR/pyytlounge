@@ -1,7 +1,5 @@
 import asyncio
-from src.pyytlounge.wrapper import YtLoungeApi, PlaybackState, State
-from ast import literal_eval
-import os
+from src.pyytlounge.wrapper import YtLoungeApi
 import logging
 
 AUTH_STATE_FILE = "auth_state"
@@ -11,10 +9,11 @@ console_handler.setLevel(logging.DEBUG)
 logger.addHandler(console_handler)
 logger.setLevel(logging.DEBUG)
 
+
 async def go():
-    api = YtLoungeApi("Test", logger)
-    api.auth.screen_id = 'qofgtvoflsm72sc34jgfsue6ki'
-    
+    api = YtLoungeApi("Test", logger=logger)
+    api.auth.screen_id = "qofgtvoflsm72sc34jgfsue6ki"
+
     async with api:
         refreshed = await api.refresh_auth()
         if refreshed:
