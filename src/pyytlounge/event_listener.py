@@ -9,7 +9,8 @@ from .events import (
 
 
 class EventListener(ABC):
-    """Base class to implement an event listener"""
+    """Base class to implement an event listener.
+    You should subclass this and override methods for events you're interested in."""
 
     def __init__(self):
         pass
