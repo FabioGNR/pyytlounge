@@ -9,7 +9,7 @@ import aiohttp
 from aiohttp import ClientTimeout, ClientPayloadError
 
 from .api import api_base
-from .models import PlaybackState, AuthState, _Device, _DeviceInfo, _LoungeStatus
+from .models import PlaybackState, AuthState, _Device, _DeviceInfo, _LoungeStatus, DpadCommand
 from .exceptions import NotConnectedException, NotLinkedException, NotPairedException
 from .util import as_aiter, iter_response_lines
 
@@ -460,6 +460,6 @@ class YtLoungeApi:
         """Sets the playback speed to given value (0.25-2)"""
         return await self._command("setPlaybackSpeed", {"playbackSpeed": speed})
 
-    async def send_dpad_command(self, button_input: str) -> bool:
-        """Sends a dpad command like a remote. Acceptable values: [UP,DOWN,RIGHT,LEFT,ENTER,BACK]"""
-        return await self._command("dpadCommand", {"key": button_input.upper()})
+    async def send_dpad_command(self, button_input: DpadCommand) -> bool:
+        """Sends a dpad command like a remote."""
+        return await self._command("dpadCommand", {"key": button_input.value})
