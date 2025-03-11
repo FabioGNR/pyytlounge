@@ -462,4 +462,4 @@ class YtLoungeApi:
 
     async def send_dpad_command(self, button_input: DpadCommand) -> bool:
         """Sends a dpad command like a remote."""
-        return await self._command("dpadCommand", {"key": button_input.value})
+        return await self._command("dpadCommand", {"key": button_input})
