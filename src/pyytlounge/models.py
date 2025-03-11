@@ -127,3 +127,12 @@ class _Device(TypedDict):
 
 class _LoungeStatus(TypedDict):
     devices: str  # json string containing list of __Device
+
+
+class DpadCommand(str, Enum):
+    UP = "UP"
+    DOWN = "DOWN"
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
+    ENTER = "ENTER"
+    BACK = "BACK"
