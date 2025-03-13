@@ -31,7 +31,8 @@ Alternatively, you can call `.close()` manually:
 
 
 When we have an instance of the class, we need to :meth:`~.YtLoungeApi.pair` with a screen.
-Currently this can only be done through a pairing code (this can be found in the app's settings).
+Currently this can be done through a pairing code (this can be found in the app's settings) or through the :ref:`dial` protocol.
+Using a pairing code it would look something like this:
 
 .. code-block:: python
 
@@ -58,15 +59,22 @@ If this succeeds, commands can now be submitted, such as :meth:`~.YtLoungeApi.se
 .. code-block:: python
 
     # seek to 10 seconds
-    seek_success = await api.seek_to(self, time=10)
+    seek_success = await api.seek_to(time=10)
 
 You can also :meth:`~.YtLoungeApi.subscribe` to the screen's status:
 
 .. code-block:: python
 
-    def receive_state(state: State):
-        print(state)
+    class YtListener(EventListener):
+        async def now_playing_changed(self, event: NowPlayingEvent) -> None:
+            """Called when active video changes"""
+            print(
+                f"New state: {event.state} = id: {event.video_id} pos: {event.current_time} duration: {event.duration}"
+            )
 
-    # this will block until the subscription ends
-    subscribed = await api.subscribe(receive_state)
+    listener = YtListener()
+
+    async with YtLoungeApi('Test client', listener) as api:
+        # this will block until the subscription ends
+        subscribed = await api.subscribe()
 
