@@ -23,9 +23,7 @@ class State(Enum):
         try:
             return State(int(state["state"]))
         except ValueError:
-            _logger.warning(
-                "Unknown state %s %s. Assuming stopped state.", state["state"], state
-            )
+            _logger.warning("Unknown state %s %s. Assuming stopped state.", state["state"], state)
             return State.Stopped
 
 
@@ -70,3 +68,12 @@ class AuthState:
         if data["version"] == CURRENT_AUTH_VERSION:
             for key in data:
                 setattr(self, key, data[key])
+
+
+class DpadCommand(str, Enum):
+    UP = "UP"
+    DOWN = "DOWN"
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
+    ENTER = "ENTER"
+    BACK = "BACK"

@@ -17,7 +17,7 @@ from .events import (
     VolumeChangedEvent,
     AutoplayModeChangedEvent,
 )
-from .models import AuthState
+from .models import AuthState, DpadCommand
 from .lounge_models import _Device, _DeviceInfo, _LoungeStatus
 from .exceptions import NotConnectedException, NotLinkedException, NotPairedException
 from .util import as_aiter, iter_response_lines
@@ -449,3 +449,11 @@ class YtLoungeApi:
     async def set_volume(self, volume: int) -> bool:
         """Sets volume to given value (0-100)"""
         return await self._command("setVolume", {"volume": volume})
+
+    async def set_playback_speed(self, speed: float) -> bool:
+        """Sets the playback speed to given value (0.25-2)"""
+        return await self._command("setPlaybackSpeed", {"playbackSpeed": speed})
+
+    async def send_dpad_command(self, button_input: DpadCommand) -> bool:
+        """Sends a dpad command like a remote."""
+        return await self._command("dpadCommand", {"key": button_input})
