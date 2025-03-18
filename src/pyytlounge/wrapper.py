@@ -458,7 +458,7 @@ class YtLoungeApi:
         """Sends a dpad command like a remote."""
         return await self._command("dpadCommand", {"key": button_input})
 
-    async def set_closed_captions(self, language_code: str | None, video_id: str):
+    async def set_closed_captions(self, language_code: Optional[str], video_id: str):
         """
         Sets the closed captions to the provided BCP-47 language_code if available.
         Provide the language_code as None to toggle closed captions to off.
