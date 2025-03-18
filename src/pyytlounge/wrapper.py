@@ -464,7 +464,8 @@ class YtLoungeApi:
         Provide the language_code as None to toggle closed captions to off.
         video_id is always required.
         """
-        return await self._command("setSubtitlesTrack", {"languageCode": language_code, "videoId": video_id})
+        lang = language_code if language_code is not None else ""
+        return await self._command("setSubtitlesTrack", {"languageCode": lang, "videoId": video_id})
     
     async def get_available_captions(self, api_key: str, video_id: str):
         """Uses the traditional YouTube API to enumerate available subtitle tracks."""
