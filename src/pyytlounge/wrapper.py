@@ -6,10 +6,10 @@ import logging
 from typing import Any, AsyncIterator, Dict, List, Optional
 
 import aiohttp
-from aiohttp import ClientTimeout, ClientPayloadError, ClientSession
+from aiohttp import ClientTimeout, ClientPayloadError
 
 from .api import api_base
-from .api import get_thumbnail_url  # noqa # we want to export this from this module
+from .api import get_thumbnail_url, get_available_captions  # noqa # we want to export this from this module
 from .event_listener import EventListener, _EmptyListener
 from .events import (
     PlaybackStateEvent,
@@ -466,28 +466,3 @@ class YtLoungeApi:
         """
         lang = language_code if language_code is not None else ""
         return await self._command("setSubtitlesTrack", {"languageCode": lang, "videoId": video_id})
-    
-    async def get_available_captions(self, api_key: str, video_id: str):
-        """Uses the traditional YouTube API to enumerate available subtitle tracks."""
-        yt_base_url = "https://www.googleapis.com/youtube/v3/captions"
-        params = {
-            "part": "snippet",
-            "videoId": video_id,
-            "key": api_key
-        }
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(yt_base_url, params=params) as response:
-                if response.status != 200:
-                    raise Exception(f"Request failed with status {response.status}")
-                
-                data = await response.json()
-                
-                languages = []
-                for item in data.get("items", []):
-                    snippet = item.get("snippet", {})
-                    language = snippet.get("language")
-                    if language and language not in languages:
-                        languages.append(language)
-                        
-                return languages
