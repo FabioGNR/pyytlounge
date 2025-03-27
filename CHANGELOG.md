@@ -1,3 +1,22 @@
+# 3.0.0
+
+### Breaking changes
+
+- Listening for events is now done through an EventListener class instead of a single callback. This allows to add events in a flexible way.
+  See [migration documentation](https://pyytlounge.readthedocs.io/en/v3.0.0/updating.html#migrate-to-event-listener-v3-x-x).
+  If you are using `YtLoungeApi.subscribe` you must update your usage.
+
+
+### Added
+
+- `volume_changed` event (onVolumeChanged)
+- `autoplay_changed` event (onAutoplayModeChanged)
+- `send_dpad_command` command to send remote button presses (@sternma)
+- `set_playback_speed` command to set video playback speed (@sternma)
+- `set_closed_captions` command to set closed captions based on language code or turn it off (@sternma)
+- `get_available_captions` helper to retrieve available closed captions for a video using YouTube v3 API (@sternma)
+
+
 # 2.3.0
 
 ### Added
