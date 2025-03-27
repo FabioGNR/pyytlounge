@@ -9,7 +9,7 @@ import aiohttp
 from aiohttp import ClientTimeout, ClientPayloadError
 
 from .api import api_base
-from .api import get_thumbnail_url  # noqa # we want to export this from this module
+from .api import get_thumbnail_url, get_available_captions  # noqa # we want to export this from this module
 from .event_listener import EventListener, _EmptyListener
 from .events import (
     PlaybackStateEvent,
@@ -457,3 +457,12 @@ class YtLoungeApi:
     async def send_dpad_command(self, button_input: DpadCommand) -> bool:
         """Sends a dpad command like a remote."""
         return await self._command("dpadCommand", {"key": button_input})
+
+    async def set_closed_captions(self, language_code: Optional[str], video_id: str):
+        """
+        Sets the closed captions to the provided BCP-47 language_code if available.
+        Provide the language_code as None to toggle closed captions to off.
+        video_id is always required.
+        """
+        lang = language_code if language_code is not None else ""
+        return await self._command("setSubtitlesTrack", {"languageCode": lang, "videoId": video_id})
