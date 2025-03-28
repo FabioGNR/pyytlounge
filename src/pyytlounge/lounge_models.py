@@ -39,3 +39,43 @@ class _Device(TypedDict):
 
 class _LoungeStatus(TypedDict):
     devices: str  # json string containing list of __Device
+
+
+class _AdStateData(TypedDict):
+    adState: str
+    currentTime: str
+    isSkipEnabled: str
+
+
+class _AdPlayingData(_AdStateData):
+    adVideoId: str
+    adVideoUri: str
+    adTitle: str
+    isBumper: str
+    isSkippable: str
+    clickThroughUrl: str
+    adSystem: str
+    adNextParams: str
+    remoteSlotsData: str
+    contentVideoId: str
+    duration: str
+
+
+class _SubtitlesTrackData(TypedDict):
+    videoId: str
+    trackName: str
+    languageCode: str
+    sourceLanguageCode: str
+    languageName: str
+    kind: str
+    vss_id: str
+    captionId: str
+    style: str
+
+
+class _AutoplayUpNextData(TypedDict):
+    videoId: str
+
+
+class _PlaybackSpeedData(TypedDict):
+    playbackSpeed: str
