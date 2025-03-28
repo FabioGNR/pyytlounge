@@ -18,19 +18,19 @@ class PlaybackStateEvent:
     def __init__(self, data: _PlaybackStateData):
         self.current_time: float = float(data["currentTime"])
         self.duration: float = float(data["duration"])
-        try:
-            self.state = State(int(data["state"]))
-        except ValueError:
-            _logger.warning("Unknown state %s %s. Assuming stopped state.", data["state"], data)
-            self.state = State.Stopped
+        self.state = State.parse(data["state"])
 
 
-class NowPlayingEvent(PlaybackStateEvent):
+class NowPlayingEvent:
     """Contains information related to playback state"""
 
     def __init__(self, data: _NowPlayingData):
-        super().__init__(data)
-        self.video_id: str = data["videoId"]
+        self.video_id: str | None = data.get("videoId", None)
+        self.current_time: float | None = (
+            float(data["currentTime"]) if "currentTime" in data else None
+        )
+        self.duration: float | None = float(data["duration"]) if "duration" in data else None
+        self.state = State.parse(data["state"]) if "state" in data else State.Stopped
 
     def get_thumbnail_url(self, thumbnail_idx: int = 0):
         """Returns thumbnail for current video. Use thumbnail idx to get different thumbnails."""
