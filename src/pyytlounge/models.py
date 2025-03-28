@@ -21,9 +21,9 @@ class State(Enum):
     def parse(state: str) -> "State":
         """Parse a state value to State enum"""
         try:
-            return State(int(state["state"]))
+            return State(int(state))
         except ValueError:
-            _logger.warning("Unknown state %s %s. Assuming stopped state.", state["state"], state)
+            _logger.warning("Unknown state %s. Assuming stopped state.", state)
             return State.Stopped
 
 
