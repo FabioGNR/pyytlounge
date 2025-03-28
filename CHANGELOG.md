@@ -1,3 +1,9 @@
+# 3.0.1
+
+### Changed
+
+- Fixed issue when connecting to screen without any video playing
+
 # 3.0.0
 
 ### Breaking changes
