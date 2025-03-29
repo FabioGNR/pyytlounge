@@ -5,6 +5,11 @@ from .events import (
     PlaybackStateEvent,
     VolumeChangedEvent,
     AutoplayModeChangedEvent,
+    AdStateEvent,
+    AdPlayingEvent,
+    SubtitlesTrackEvent,
+    AutoplayUpNextEvent,
+    PlaybackSpeedEvent,
 )
 
 
@@ -26,6 +31,21 @@ class EventListener(ABC):
 
     async def autoplay_changed(self, event: AutoplayModeChangedEvent) -> None:
         """Called when auto play mode changes"""
+
+    async def ad_state_changed(self, event: AdStateEvent) -> None:
+        """Called when ad state changes (position, play/pause, skippable)"""
+
+    async def ad_playing_changed(self, event: AdPlayingEvent) -> None:
+        """Called when ad starts playing"""
+
+    async def subtitles_track_changed(self, event: SubtitlesTrackEvent) -> None:
+        """Called when subtitles track changes"""
+
+    async def autoplay_up_next_changed(self, event: AutoplayUpNextEvent) -> None:
+        """Called when up next video changes"""
+
+    async def playback_speed_changed(self, event: PlaybackSpeedEvent) -> None:
+        """Called when playback speed changes"""
 
     async def disconnected(self) -> None:
         """Called when the screen is no longer connected"""
