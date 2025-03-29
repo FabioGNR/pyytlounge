@@ -69,6 +69,7 @@ class AdStateEvent:
         self.current_time: float = float(data["currentTime"])
         self.is_skip_enabled: bool = data["isSkipEnabled"] == "true"
 
+
 class AdPlayingEvent:
     """Contains information related to ad state"""
 
@@ -115,4 +116,4 @@ class PlaybackSpeedEvent:
     """Contains information related to playback speed"""
 
     def __init__(self, data: _PlaybackSpeedData):
-        self.playback_speed: float = data["playbackSpeed"]
+        self.playback_speed: float = float(data["playbackSpeed"])
