@@ -18,6 +18,12 @@ DEVICE_NAMESPACE = "urn:schemas-upnp-org:device-1-0"
 SERVICE_NAMESPACE = "urn:dial-multiscreen-org:schemas:dial"
 
 
+def _get_optional_element_text(element: Optional[ElementTree.Element], default: str):
+    if element:
+        return element.text or default
+    return default
+
+
 async def get_screen_id_from_dial(url: str) -> Optional[DialResult]:
     """Tries to get YouTube screen id from a DIAL endpoint"""
     async with ClientSession() as session:
@@ -35,9 +41,9 @@ async def get_screen_id_from_dial(url: str) -> Optional[DialResult]:
                 return None
             service = ElementTree.fromstring(await response.text())
         screen_id = service.find(".//additionalData/screenId", {"": SERVICE_NAMESPACE})
-        if screen_id is not None:
+        if screen_id is not None and screen_id.text is not None:
             return DialResult(
-                screen_name=friendly_name.text if friendly_name is not None else "",
+                screen_name=_get_optional_element_text(friendly_name, ""),
                 screen_id=screen_id.text,
             )
     return None
