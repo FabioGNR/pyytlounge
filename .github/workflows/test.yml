@@ -28,20 +28,18 @@ jobs:
     - name: Build package
       run: python -m build
     - name: Run mypy (type checking)
-      run: |
-         python -m mypy src
+      run: python -m mypy src
     - name: Test with pytest
-      run: |
-         pytest tests/ --junitxml=junit/test-results.xml
+      id: pytest
+      run: pytest tests/ --junitxml=junit/test-results.xml
     - name: Test summary
       uses: test-summary/action@v2.4
       with:
         paths: junit/test-results.xml
-      if: always()
+      if: ${{ steps.pytest.conclusion == 'failure' }}
     - name: Upload results
       uses: actions/upload-artifact@v4
       with:
         name: pytest-results
         path: junit/test-results.xml
-      # Use always() to always run this step to publish test results when there are test failures
-      if: ${{ always() }}
+      if: ${{ steps.pytest.conclusion == 'failure' }}
