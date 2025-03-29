@@ -22,7 +22,9 @@ dependencies = [
 "Bug Tracker" = "https://github.com/FabioGNR/pyytlounge/issues"
 
 [project.optional-dependencies]
-tests = [
+dev = [
+  'ruff',
+  'mypy',
   'pytest',
   'pytest-mock',
   'pytest-asyncio',
