@@ -73,6 +73,12 @@ class YtLoungeApi:
         await self.session.close()
         await self.conn.close()
 
+    @property
+    def _required_session(self) -> aiohttp.ClientSession:
+        if self.session is None:
+            raise RuntimeError("API is not initialized. Use async context manager.")
+        return self.session
+
     def paired(self) -> bool:
         """Returns true if screen id is known."""
         return self.auth.screen_id is not None
@@ -125,7 +131,7 @@ class YtLoungeApi:
 
         pair_url = f"{api_base}/pairing/get_screen"
         pair_data = {"pairing_code": pairing_code}
-        async with self.session.post(url=pair_url, data=pair_data) as resp:
+        async with self._required_session.post(url=pair_url, data=pair_data) as resp:
             try:
                 screens = await resp.json()
                 screen = screens["screen"]
@@ -144,7 +150,7 @@ class YtLoungeApi:
 
         refresh_url = f"{api_base}/pairing/get_lounge_token_batch"
         refresh_data = {"screen_ids": self.auth.screen_id}
-        async with self.session.post(url=refresh_url, data=refresh_data) as resp:
+        async with self._required_session.post(url=refresh_url, data=refresh_data) as resp:
             try:
                 screens = await resp.json()
                 screen = screens["screens"][0]
@@ -255,7 +261,7 @@ class YtLoungeApi:
 
         url = f"{api_base}/pairing/get_screen_availability"
 
-        result = await self.session.post(url=url, data=body)
+        result = await self._required_session.post(url=url, data=body)
         status = await result.json()
         if "screens" in status and len(status["screens"]) > 0:
             return status["screens"][0]["status"] == "online"
@@ -282,7 +288,7 @@ class YtLoungeApi:
             "loungeIdToken": self.auth.lounge_id_token,
         }
         connect_url = f"{api_base}/bc/bind?RID=1&VER=8&CVER=1&auth_failure_option=send_error"
-        async with self.session.post(url=connect_url, data=connect_body) as resp:
+        async with self._required_session.post(url=connect_url, data=connect_body) as resp:
             try:
                 text = await resp.text()
                 if resp.status == 401:
@@ -344,7 +350,9 @@ class YtLoungeApi:
         }
         url = f"{api_base}/bc/bind"
         self._logger.info("Subscribing to lounge id %s", self.auth.lounge_id_token)
-        async with self.session.get(url=url, params=params, timeout=ClientTimeout()) as resp:
+        async with self._required_session.get(
+            url=url, params=params, timeout=ClientTimeout()
+        ) as resp:
             try:
                 if not self._handle_session_result(resp.status, resp.reason):
                     return
@@ -387,7 +395,7 @@ class YtLoungeApi:
             "auth_failure_option": "send_error",
         }
         url = f"{api_base}/bc/bind"
-        async with self.session.post(url=url, data=command_body, params=params) as resp:
+        async with self._required_session.post(url=url, data=command_body, params=params) as resp:
             try:
                 response_text = await resp.text()
                 if not self._handle_session_result(resp.status, response_text):
@@ -414,7 +422,7 @@ class YtLoungeApi:
             "RID": self._command_offset,
         }
         url = f"{api_base}/bc/bind"
-        async with self.session.post(url=url, data=command_body, params=params) as resp:
+        async with self._required_session.post(url=url, data=command_body, params=params) as resp:
             try:
                 response_text = await resp.text()
                 if not self._handle_session_result(resp.status, response_text):
