@@ -354,7 +354,7 @@ class YtLoungeApi:
             url=url, params=params, timeout=ClientTimeout()
         ) as resp:
             try:
-                if not self._handle_session_result(resp.status, resp.reason):
+                if not self._handle_session_result(resp.status, resp.reason or ""):
                     return
 
                 async for events in self._parse_event_chunks(iter_response_lines(resp.content)):
