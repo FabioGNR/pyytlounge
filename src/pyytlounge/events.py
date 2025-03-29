@@ -41,7 +41,7 @@ class NowPlayingEvent:
     def get_thumbnail_url(self, thumbnail_idx: int = 0) -> Optional[str]:
         """Returns thumbnail for current video. Use thumbnail idx to get different thumbnails."""
         if self.video_id:
-            get_thumbnail_url(self.video_id, thumbnail_idx=thumbnail_idx)
+            return get_thumbnail_url(self.video_id, thumbnail_idx=thumbnail_idx)
         return None
 
 
