@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from .api import get_thumbnail_url
 from .models import State
@@ -37,17 +38,18 @@ class NowPlayingEvent:
         self.duration: float | None = float(data["duration"]) if "duration" in data else None
         self.state = State.parse(data["state"]) if "state" in data else State.Stopped
 
-    def get_thumbnail_url(self, thumbnail_idx: int = 0):
+    def get_thumbnail_url(self, thumbnail_idx: int = 0) -> Optional[str]:
         """Returns thumbnail for current video. Use thumbnail idx to get different thumbnails."""
-
-        get_thumbnail_url(self.video_id, thumbnail_idx=thumbnail_idx)
+        if self.video_id:
+            get_thumbnail_url(self.video_id, thumbnail_idx=thumbnail_idx)
+        return None
 
 
 class VolumeChangedEvent:
     """Contains information related to volume"""
 
     def __init__(self, data: _VolumeChangedData):
-        self.volume: int = data["volume"]
+        self.volume: int = int(data["volume"])
         self.muted: bool = data["muted"] == "true"
 
 

@@ -48,12 +48,9 @@ class YtLoungeApi:
         self._sid = None
         self._gsession = None
         self._last_event_id = None
-        if event_listener:
-            self.event_listener = event_listener
-        else:
-            self.event_listener: EventListener = _EmptyListener()
+        self.event_listener = event_listener or _EmptyListener()
         self._command_offset = 1
-        self._screen_name: str = None
+        self._screen_name: Optional[str] = None
         self._device_info: Optional[_DeviceInfo] = None
         self._logger = logger or logging.Logger(__package__, logging.DEBUG)
         # Initialize these as None - they'll be set up in __aenter__
@@ -97,7 +94,7 @@ class YtLoungeApi:
                  "
 
     @property
-    def screen_name(self) -> str:
+    def screen_name(self) -> Optional[str]:
         """Returns screen name as returned by YouTube"""
         if not self.linked():
             raise NotLinkedException("Not linked")
@@ -401,7 +398,7 @@ class YtLoungeApi:
                 self._logger.exception("Disconnect failed")
                 raise
 
-    async def _command(self, command: str, command_parameters: dict = None) -> bool:
+    async def _command(self, command: str, command_parameters: Optional[dict] = None) -> bool:
         if not self.connected():
             raise NotConnectedException("Not connected")
 
