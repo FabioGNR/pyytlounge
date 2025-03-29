@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import TypedDict
+from typing import TypedDict, cast
 
 
 _logger = logging.getLogger(__name__)
@@ -27,7 +27,8 @@ class State(Enum):
             return State.Stopped
 
 
-CURRENT_AUTH_VERSION = 0
+AUTH_VERSION_V1 = 0
+CURRENT_AUTH_VERSION = AUTH_VERSION_V1
 
 
 class AuthStateData(TypedDict):
@@ -69,14 +70,17 @@ class AuthState:
             expiry=self.expiry,
         )
 
-    def deserialize(self, data: AuthStateData):
+    def deserialize(self, data: dict):
         """Deserializes state from a dictionary into this object."""
-        if data["version"] == CURRENT_AUTH_VERSION:
-            self.version = data["version"]
-            self.screen_id = data["screenId"]
-            self.lounge_id_token = data["loungeIdToken"]
-            self.refresh_token = data["refreshToken"]
-            self.expiry = data["expiry"]
+        if data["version"] == AUTH_VERSION_V1:
+            v1_data: AuthStateData = cast(AuthStateData, data)
+            self.version = v1_data["version"]
+            self.screen_id = v1_data["screenId"]
+            self.lounge_id_token = v1_data["loungeIdToken"]
+            self.refresh_token = v1_data["refreshToken"]
+            self.expiry = v1_data["expiry"]
+        else:
+            raise ValueError("Unknown authentication data version")
 
 
 class DpadCommand(str, Enum):
