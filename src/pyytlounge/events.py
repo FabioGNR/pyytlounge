@@ -31,11 +31,11 @@ class NowPlayingEvent:
     """Contains information related to playback state"""
 
     def __init__(self, data: _NowPlayingData):
-        self.video_id: str | None = data.get("videoId", None)
-        self.current_time: float | None = (
+        self.video_id: Optional[str] = data.get("videoId", None)
+        self.current_time: Optional[float] = (
             float(data["currentTime"]) if "currentTime" in data else None
         )
-        self.duration: float | None = float(data["duration"]) if "duration" in data else None
+        self.duration: Optional[float] = float(data["duration"]) if "duration" in data else None
         self.state = State.parse(data["state"]) if "state" in data else State.Stopped
 
     def get_thumbnail_url(self, thumbnail_idx: int = 0) -> Optional[str]:
@@ -73,8 +73,8 @@ class AdPlayingEvent:
     """Contains information related to ad state"""
 
     def __init__(self, data: _AdPlayingData):
-        self.ad_video_id: str | None = data.get("adVideoId", None)
-        self.ad_video_uri: str | None = data.get("adVideoUri", None)
+        self.ad_video_id: Optional[str] = data.get("adVideoId", None)
+        self.ad_video_uri: Optional[str] = data.get("adVideoUri", None)
         self.ad_title: str = data["adTitle"]
         self.is_bumper: bool = data["isBumper"] == "true"
         self.is_skippable: bool = data["isSkippable"] == "true"
@@ -82,7 +82,7 @@ class AdPlayingEvent:
         self.click_through_url: str = data["clickThroughUrl"]
         self.ad_system: str = data["adSystem"]
         self.ad_next_params: str = data["adNextParams"]
-        self.remote_slots_data: str | None = data.get("remoteSlotsData", None)
+        self.remote_slots_data: Optional[str] = data.get("remoteSlotsData", None)
         self.ad_state = State.parse(data["adState"])
         self.content_video_id: str = data["contentVideoId"]
         self.duration: float = float(data["duration"])
@@ -94,14 +94,14 @@ class SubtitlesTrackEvent:
 
     def __init__(self, data: _SubtitlesTrackData):
         self.video_id: str = data["videoId"]
-        self.track_name: str | None = data.get("trackName", None)
-        self.language_code: str | None = data.get("languageCode", None)
-        self.source_language_code: str | None = data.get("sourceLanguageCode", None)
-        self.language_name: str | None = data.get("languageName", None)
-        self.kind: str | None = data.get("kind", None)
-        self.vss_id: str | None = data.get("vss_id", None)
-        self.caption_id: str | None = data.get("captionId", None)
-        self.style: str | None = data.get("style", None)
+        self.track_name: Optional[str] = data.get("trackName", None)
+        self.language_code: Optional[str] = data.get("languageCode", None)
+        self.source_language_code: Optional[str] = data.get("sourceLanguageCode", None)
+        self.language_name: Optional[str] = data.get("languageName", None)
+        self.kind: Optional[str] = data.get("kind", None)
+        self.vss_id: Optional[str] = data.get("vss_id", None)
+        self.caption_id: Optional[str] = data.get("captionId", None)
+        self.style: Optional[str] = data.get("style", None)
 
 
 class AutoplayUpNextEvent:

@@ -1,6 +1,7 @@
 """Helper functions for discovering YouTube Lounge through DIAL"""
 
 from dataclasses import dataclass
+from typing import Optional
 from xml.etree import ElementTree
 from aiohttp import ClientSession
 
@@ -17,7 +18,7 @@ DEVICE_NAMESPACE = "urn:schemas-upnp-org:device-1-0"
 SERVICE_NAMESPACE = "urn:dial-multiscreen-org:schemas:dial"
 
 
-async def get_screen_id_from_dial(url: str) -> DialResult | None:
+async def get_screen_id_from_dial(url: str) -> Optional[DialResult]:
     """Tries to get YouTube screen id from a DIAL endpoint"""
     async with ClientSession() as session:
         async with session.get(url) as response:
