@@ -1,3 +1,18 @@
+# 3.1.0
+
+### Added
+
+- `ad_state_changed` event (onAdStateChange) (@dmunozv04)
+- `ad_playing_changed` event (adPlaying) (@dmunozv04)
+- `subtitles_track_changed` event (onSubtitlesTrackChanged) (@dmunozv04)
+- `autoplay_up_next_changed` event (autoplayUpNext) (@dmunozv04)
+- `playback_speed_changed` event (onPlaybackSpeedChanged) (@dmunozv04)
+
+### Changed
+
+- Fixed volume level not converted to int
+- Fixed `NowPlayingEvent.get_thumbnail_url`
+
 # 3.0.1
 
 ### Changed
