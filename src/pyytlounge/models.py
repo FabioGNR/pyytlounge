@@ -61,13 +61,22 @@ class AuthState:
 
     def serialize(self) -> AuthStateData:
         """Serializes the current state into a dictionary."""
-        return vars(self)
+        return AuthStateData(
+            version=self.version,
+            screenId=self.screen_id,
+            loungeIdToken=self.lounge_id_token,
+            refreshToken=self.refresh_token,
+            expiry=self.expiry,
+        )
 
     def deserialize(self, data: AuthStateData):
         """Deserializes state from a dictionary into this object."""
         if data["version"] == CURRENT_AUTH_VERSION:
-            for key in data:
-                setattr(self, key, data[key])
+            self.version = data["version"]
+            self.screen_id = data["screenId"]
+            self.lounge_id_token = data["loungeIdToken"]
+            self.refresh_token = data["refreshToken"]
+            self.expiry = data["expiry"]
 
 
 class DpadCommand(str, Enum):
