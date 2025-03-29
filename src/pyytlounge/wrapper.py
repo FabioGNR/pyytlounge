@@ -193,19 +193,14 @@ class YtLoungeApi:
             await self.event_listener.autoplay_changed(AutoplayModeChangedEvent(args[0]))
         elif event_type == "onAdStateChange":
             await self.event_listener.ad_state_changed(AdStateEvent(args[0]))
-            pass
         elif event_type == "adPlaying":
             await self.event_listener.ad_playing_changed(AdPlayingEvent(args[0]))
-            pass
         elif event_type == "onSubtitlesTrackChanged":
             await self.event_listener.subtitles_track_changed(SubtitlesTrackEvent(args[0]))
-            pass
-        elif event_type == "autoplayUpNext":
+        elif event_type == "autoplayUpNext" and args:
             await self.event_listener.autoplay_up_next_changed(AutoplayUpNextEvent(args[0]))
-            pass
         elif event_type == "onPlaybackSpeedChanged":
             await self.event_listener.playback_speed_changed(PlaybackSpeedEvent(args[0]))
-            pass
         elif event_type == "loungeStatus":
             data: _LoungeStatus = args[0]
             devices: List[_Device] = json.loads(data["devices"])
