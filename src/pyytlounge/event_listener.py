@@ -10,6 +10,7 @@ from .events import (
     SubtitlesTrackEvent,
     AutoplayUpNextEvent,
     PlaybackSpeedEvent,
+    DisconnectedEvent,
 )
 
 
@@ -47,7 +48,7 @@ class EventListener(ABC):
     async def playback_speed_changed(self, event: PlaybackSpeedEvent) -> None:
         """Called when playback speed changes"""
 
-    async def disconnected(self) -> None:
+    async def disconnected(self, event: DisconnectedEvent) -> None:
         """Called when the screen is no longer connected"""
 
 
