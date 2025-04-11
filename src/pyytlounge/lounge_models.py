@@ -79,3 +79,7 @@ class _AutoplayUpNextData(TypedDict):
 
 class _PlaybackSpeedData(TypedDict):
     playbackSpeed: str
+
+
+class _DisconnectedData(TypedDict):
+    reason: str
