@@ -90,3 +90,6 @@ class DpadCommand(str, Enum):
     RIGHT = "RIGHT"
     ENTER = "ENTER"
     BACK = "BACK"
+
+
+blacklisted_clients = ["TVHTML5_FOR_KIDS"]
