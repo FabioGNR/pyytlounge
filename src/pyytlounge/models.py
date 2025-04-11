@@ -92,4 +92,4 @@ class DpadCommand(str, Enum):
     BACK = "BACK"
 
 
-blacklisted_clients = ["TVHTML5_FOR_KIDS"]
+BLACKLISTED_CLIENTS = ["TVHTML5_FOR_KIDS"]

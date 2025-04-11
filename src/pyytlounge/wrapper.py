@@ -22,7 +22,7 @@ from .events import (
     AutoplayUpNextEvent,
     PlaybackSpeedEvent,
 )
-from .models import AuthState, DpadCommand, blacklisted_clients
+from .models import AuthState, DpadCommand, BLACKLISTED_CLIENTS
 from .lounge_models import _Device, _DeviceInfo, _LoungeStatus
 from .exceptions import (
     NotConnectedException,
@@ -218,7 +218,7 @@ class YtLoungeApi:
                     self._device_info = json.loads(device.get("deviceInfo", "null"))
                     if (
                         self._device_info
-                        and self._device_info.get("clientName", "") in blacklisted_clients
+                        and self._device_info.get("clientName", "") in BLACKLISTED_CLIENTS
                     ):
                         raise NotSupportedException("Unsupported client")
                     break
