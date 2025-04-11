@@ -214,7 +214,7 @@ class YtLoungeApi:
                     self._device_info = json.loads(device.get("deviceInfo", "null"))
                     break
         elif event_type == "loungeScreenDisconnected":
-            await self.event_listener.disconnected(DisconnectedEvent(args or None))
+            await self.event_listener.disconnected(DisconnectedEvent(args[0] if args else None))
             self._connection_lost()
             self._lounge_token_expired()
         elif event_type == "noop":
