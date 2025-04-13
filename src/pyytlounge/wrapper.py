@@ -22,9 +22,14 @@ from .events import (
     AutoplayUpNextEvent,
     PlaybackSpeedEvent,
 )
-from .models import AuthState, DpadCommand
+from .models import AuthState, DpadCommand, BLACKLISTED_CLIENTS
 from .lounge_models import _Device, _DeviceInfo, _LoungeStatus
-from .exceptions import NotConnectedException, NotLinkedException, NotPairedException
+from .exceptions import (
+    NotConnectedException,
+    NotLinkedException,
+    NotPairedException,
+    NotSupportedException,
+)
 from .util import as_aiter, iter_response_lines
 
 
@@ -211,6 +216,11 @@ class YtLoungeApi:
                 if device["type"] == "LOUNGE_SCREEN":
                     self._screen_name = device["name"]
                     self._device_info = json.loads(device.get("deviceInfo", "null"))
+                    if (
+                        self._device_info
+                        and self._device_info.get("clientName", "") in BLACKLISTED_CLIENTS
+                    ):
+                        raise NotSupportedException("Unsupported client")
                     break
         elif event_type == "loungeScreenDisconnected":
             await self.event_listener.disconnected()
