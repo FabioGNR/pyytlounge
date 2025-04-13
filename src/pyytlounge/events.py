@@ -13,6 +13,7 @@ from .lounge_models import (
     _SubtitlesTrackData,
     _AutoplayUpNextData,
     _PlaybackSpeedData,
+    _DisconnectedData,
 )
 
 _logger = logging.getLogger(__name__)
@@ -117,3 +118,10 @@ class PlaybackSpeedEvent:
 
     def __init__(self, data: _PlaybackSpeedData):
         self.playback_speed: float = float(data["playbackSpeed"])
+
+
+class DisconnectedEvent:
+    """Contains information related to disconnection"""
+    
+    def __init__(self, data: Optional[_DisconnectedData]):
+        self.reason: Optional[str] = data.get("reason", None) if data else None

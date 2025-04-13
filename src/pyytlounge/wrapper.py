@@ -21,6 +21,7 @@ from .events import (
     SubtitlesTrackEvent,
     AutoplayUpNextEvent,
     PlaybackSpeedEvent,
+    DisconnectedEvent
 )
 from .models import AuthState, DpadCommand, BLACKLISTED_CLIENTS
 from .lounge_models import _Device, _DeviceInfo, _LoungeStatus
@@ -223,7 +224,7 @@ class YtLoungeApi:
                         raise NotSupportedException("Unsupported client")
                     break
         elif event_type == "loungeScreenDisconnected":
-            await self.event_listener.disconnected()
+            await self.event_listener.disconnected(DisconnectedEvent(args[0] if args else None))
             self._connection_lost()
             self._lounge_token_expired()
         elif event_type == "noop":
