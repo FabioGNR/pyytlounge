@@ -12,6 +12,8 @@ from src.pyytlounge import (
     NowPlayingEvent,
     VolumeChangedEvent,
     AutoplayModeChangedEvent,
+    DisconnectedEvent,
+    PlaybackSpeedEvent,
 )
 
 AUTH_STATE_FILE = "auth_state"
@@ -51,9 +53,13 @@ class DebugEventListener(EventListener):
             f"Auto play changed: {event.enabled} {'(not supported)' if not event.supported else ''}"
         )
 
-    async def disconnected(self) -> None:
+    async def playback_speed_changed(self, event: PlaybackSpeedEvent) -> None:
+        """Called when playback speed changes"""
+        print(f"Playback speed changed: {event.playback_speed}")
+
+    async def disconnected(self, event: DisconnectedEvent) -> None:
         """Called when the screen is no longer connected"""
-        print("Disconnected")
+        print("Disconnected", event.reason)
         self.last_video_id = None
 
 
