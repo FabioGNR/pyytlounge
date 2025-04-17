@@ -21,6 +21,7 @@ author = "FabioGNR"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode",
 ]
 
 templates_path = ["_templates"]

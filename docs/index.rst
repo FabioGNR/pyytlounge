@@ -16,7 +16,7 @@ The API has functions for controlling the device and to receive status updates f
 
    usage
    discovery
-   api
+   pyytlounge
    updating
 
 

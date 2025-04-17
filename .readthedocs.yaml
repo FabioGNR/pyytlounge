@@ -14,6 +14,9 @@ build:
     # nodejs: "19"
     # rust: "1.64"
     # golang: "1.19"
+  jobs:
+    pre_build:
+      - sphinx-apidoc -f --module-first --no-toc -o docs/ src/
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
@@ -28,8 +31,8 @@ sphinx:
 # to build your documentation
 # See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
 python:
-   install:
-   - method: pip
-     path: .
-     extra_requirements:
-       - docs
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs

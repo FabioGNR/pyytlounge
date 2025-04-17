@@ -11,5 +11,5 @@
 View the docs locally:
 
 1. `cd docs`
-2. `$(make html && cd _build/html && python -m http.server)`
+2. `./view_docs.sh`
 3. Open `http://localhost:8000`
