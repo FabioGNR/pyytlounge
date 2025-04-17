@@ -21,7 +21,7 @@ from .events import (
     SubtitlesTrackEvent,
     AutoplayUpNextEvent,
     PlaybackSpeedEvent,
-    DisconnectedEvent
+    DisconnectedEvent,
 )
 from .models import AuthState, DpadCommand, BLACKLISTED_CLIENTS
 from .lounge_models import _Device, _DeviceInfo, _LoungeStatus
@@ -292,7 +292,6 @@ class YtLoungeApi:
             "id": self.auth.screen_id,
             "device": "REMOTE_CONTROL",
             "capabilities": "que,dsdtr,atp,vsp",
-            "method": "setPlaylist",
             "magnaKey": "cloudPairedDevice",
             "ui": "false",
             "deviceContext": "user_agent=dunno&window_width_points=&window_height_points=&os_name=android&ms=",
