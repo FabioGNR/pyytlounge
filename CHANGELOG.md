@@ -1,3 +1,20 @@
+# 3.2.0
+
+### Breaking changes
+
+- `EventListener.disconnected(self)` signature changed to facilitate event data, should be changed to `disconnected(self, event: DisconnectedEvent)`
+
+### Added
+
+- Detect unsupported 'YouTube TV Kids' client and raise `NotSupportedException` (@dmunozv04)
+- `disconnected` event now provides reason if available (@dmunozv04)
+- Automatically request playback state when playback speed is changed (@dmunozv04)
+
+### Changed
+
+- Remove `setPlaylist` command when connecting to screen (@dmunozv04)
+- Fixed is_available raising incorrect exception
+
 # 3.1.0
 
 ### Added
@@ -27,7 +44,6 @@
   See [migration documentation](https://pyytlounge.readthedocs.io/en/v3.0.0/updating.html#migrate-to-event-listener-v3-x-x).
   If you are using `YtLoungeApi.subscribe` you must update your usage.
 
-
 ### Added
 
 - `volume_changed` event (onVolumeChanged)
@@ -36,7 +52,6 @@
 - `set_playback_speed` command to set video playback speed (@sternma)
 - `set_closed_captions` command to set closed captions based on language code or turn it off (@sternma)
 - `get_available_captions` helper to retrieve available closed captions for a video using YouTube v3 API (@sternma)
-
 
 # 2.3.0
 
