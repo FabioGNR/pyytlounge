@@ -295,7 +295,7 @@ class YtLoungeApi:
     async def connect(self) -> bool:
         """Attempt to connect using the previously set tokens.
 
-        :raises NotSupportedException: screen is not supported by lounge protocol
+        :raises NotSupportedException: screen does not allow lounge client
         :raises NotLinkedException: client is not yet linked, first pair or refresh authorization
         """
         if not self.linked():
@@ -367,7 +367,7 @@ class YtLoungeApi:
     async def subscribe(self) -> None:
         """Start listening for events. Updates will be sent to the event_listener passed when creating this object.
 
-        :raises NotSupportedException: screen is not supported by lounge protocol
+        :raises NotSupportedException: screen does not allow lounge client
         :raises NotConnectedException: the client is not yet connected to the screen
         """
         if not self.connected():
