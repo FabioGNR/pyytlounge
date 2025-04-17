@@ -107,7 +107,10 @@ class YtLoungeApi:
 
     @property
     def screen_name(self) -> Optional[str]:
-        """Returns screen name as returned by YouTube"""
+        """Returns screen name as returned by YouTube.
+
+        :raises NotLinkedException: there is no screen linked yet
+        """
         if not self.linked():
             raise NotLinkedException("Not linked")
 
@@ -116,7 +119,10 @@ class YtLoungeApi:
     @property
     def screen_device_name(self) -> Optional[str]:
         """Returns device name built from device info returned by YouTube.
-        Returns None if not yet initialized or information was not sent."""
+        Returns None if not yet initialized or information was not sent.
+
+        :raises NotConnectedException: screen is not yet connected
+        """
         if not self.connected():
             raise NotConnectedException("Not connected")
         if not self._device_info:
@@ -150,7 +156,10 @@ class YtLoungeApi:
                 raise
 
     async def refresh_auth(self) -> bool:
-        """Refresh lounge token using stored refresh token."""
+        """Refresh lounge token using stored refresh token.
+
+        :raises NotPairedException: the screen is not yet known, pair first
+        """
         if not self.paired():
             raise NotPairedException("Must be paired")
 
@@ -264,7 +273,10 @@ class YtLoungeApi:
 
     async def is_available(self) -> bool:
         """Asks YouTube API if the screen is available.
-        Must be linked prior to this."""
+        Must be linked prior to this.
+
+        :raises NotLinkedException: client is not yet linked, first pair or refresh authorization
+        """
 
         if not self.linked():
             raise NotLinkedException("Not linked")
@@ -281,7 +293,11 @@ class YtLoungeApi:
         return False
 
     async def connect(self) -> bool:
-        """Attempt to connect using the previously set tokens"""
+        """Attempt to connect using the previously set tokens.
+
+        :raises NotSupportedException: screen is not supported by lounge protocol
+        :raises NotLinkedException: client is not yet linked, first pair or refresh authorization
+        """
         if not self.linked():
             raise NotLinkedException("Not linked")
 
@@ -349,7 +365,11 @@ class YtLoungeApi:
         }
 
     async def subscribe(self) -> None:
-        """Start listening for events. Updates will be sent to the event_listener passed when creating this object."""
+        """Start listening for events. Updates will be sent to the event_listener passed when creating this object.
+
+        :raises NotSupportedException: screen is not supported by lounge protocol
+        :raises NotConnectedException: the client is not yet connected to the screen
+        """
         if not self.connected():
             raise NotConnectedException("Not connected")
 
@@ -390,7 +410,10 @@ class YtLoungeApi:
                 raise
 
     async def disconnect(self) -> bool:
-        """Disconnect from the current session"""
+        """Disconnect from the current session.
+
+        :raises NotConnectedException: the client is already not connected
+        """
         if not self.connected():
             raise NotConnectedException("Not connected")
 
@@ -418,6 +441,10 @@ class YtLoungeApi:
                 raise
 
     async def _command(self, command: str, command_parameters: Optional[dict] = None) -> bool:
+        """Issue given command with parameters.
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         if not self.connected():
             raise NotConnectedException("Not connected")
 
@@ -449,44 +476,75 @@ class YtLoungeApi:
         return await self._command("play")
 
     async def play_video(self, video_id: str) -> bool:
-        """Sends setPlaylist command to screen to play a specific video"""
+        """Sends setPlaylist command to screen to play a specific video
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("setPlaylist", {"videoId": video_id})
 
     async def pause(self) -> bool:
-        """Sends pause command to screen"""
+        """Sends pause command to screen
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("pause")
 
     async def previous(self) -> bool:
-        """Sends previous command to screen"""
+        """Sends previous command to screen
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("previous")
 
     async def next(self) -> bool:
-        """Sends next command to screen"""
+        """Sends next command to screen
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("next")
 
     async def seek_to(self, time: float) -> bool:
-        """Seek to given time (seconds)"""
+        """Seek to given time (seconds)
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("seekTo", {"newTime": time})
 
     async def skip_ad(self) -> bool:
-        """Skips ad if possible"""
+        """Skips ad if possible
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("skipAd")
 
     async def set_auto_play_mode(self, enabled: bool) -> bool:
+        """Set auto play mode enabled/disabled
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command(
             "setAutoplayMode", {"autoplayMode": "ENABLED" if enabled else "DISABLED"}
         )
 
     async def set_volume(self, volume: int) -> bool:
-        """Sets volume to given value (0-100)"""
+        """Sets volume to given value (0-100)
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("setVolume", {"volume": volume})
 
     async def set_playback_speed(self, speed: float) -> bool:
-        """Sets the playback speed to given value (0.25-2)"""
+        """Sets the playback speed to given value (0.25-2)
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("setPlaybackSpeed", {"playbackSpeed": speed})
 
     async def send_dpad_command(self, button_input: DpadCommand) -> bool:
-        """Sends a dpad command like a remote."""
+        """Sends a dpad command like a remote.
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("dpadCommand", {"key": button_input})
 
     async def set_closed_captions(self, language_code: Optional[str], video_id: str):
@@ -494,10 +552,15 @@ class YtLoungeApi:
         Sets the closed captions to the provided BCP-47 language_code if available.
         Provide the language_code as None to toggle closed captions to off.
         video_id is always required.
+
+        :raises NotConnectedException: the client is not connected to the screen
         """
         lang = language_code if language_code is not None else ""
         return await self._command("setSubtitlesTrack", {"languageCode": lang, "videoId": video_id})
 
     async def get_now_playing(self) -> bool:
-        """Requests a now playing update from the screen."""
+        """Requests a now playing update from the screen.
+
+        :raises NotConnectedException: the client is not connected to the screen
+        """
         return await self._command("getNowPlaying")

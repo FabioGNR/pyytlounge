@@ -54,6 +54,8 @@ From a linked state, the api is ready to :meth:`~.YtLoungeApi.connect`:
 
     connected = await api.connect()
 
+If a connection is attempted to an unsupported client such as YouTube TV Kids, :class:`pyytlounge.exceptions.UnsupportedExceptions` will be raised.
+
 If this succeeds, commands can now be submitted, such as :meth:`~.YtLoungeApi.seek_to`:
 
 .. code-block:: python
