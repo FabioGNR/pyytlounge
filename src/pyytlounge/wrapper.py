@@ -267,7 +267,7 @@ class YtLoungeApi:
         Must be linked prior to this."""
 
         if not self.linked():
-            raise NotConnectedException("Not connected")
+            raise NotLinkedException("Not linked")
 
         body = {"lounge_token": self.auth.lounge_id_token}
 
