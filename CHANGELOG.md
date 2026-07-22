@@ -1,3 +1,13 @@
+# 3.3.0
+
+### Breaking changes
+
+- Playback state 5 previouslly fell back to `State.Stopped`. It now has its own state `State.Cued`. Make sure this state is handled if needed.
+
+### Added
+
+- Added `State.Cued` (5) which was previously parsed as `State.Stopped` (@parroz4)
+
 # 3.2.0
 
 ### Breaking changes
