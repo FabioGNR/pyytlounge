@@ -11,10 +11,11 @@ class State(Enum):
     """Playback state"""
 
     Stopped = -1
-    Buffering = 0  # unsure, happens between videos
+    Buffering = 0  # YT labels this as "ended"
     Playing = 1
     Paused = 2
-    Starting = 3  # unsure, only seen once
+    Starting = 3  # YT labels this "buffering".
+    Cued = 5  # YT labels this "video cued". Seen before state "Starting"
     Advertisement = 1081
 
     @staticmethod
