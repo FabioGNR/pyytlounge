@@ -1,8 +1,18 @@
+# 3.4.0
+
+### Breaking changes
+
+- Playback state 1082 previously fell back to `State.Stopped`. It now has its own state `State.AdSkipped`. Make sure this state is handled if needed.
+
+### Added
+
+- Added `State.AdSkipped` (1082) which was previously parsed as `State.Stopped` (@jicetus)
+
 # 3.3.0
 
 ### Breaking changes
 
-- Playback state 5 previouslly fell back to `State.Stopped`. It now has its own state `State.Cued`. Make sure this state is handled if needed.
+- Playback state 5 previously fell back to `State.Stopped`. It now has its own state `State.Cued`. Make sure this state is handled if needed.
 
 ### Added
 
