@@ -17,6 +17,7 @@ class State(Enum):
     Starting = 3  # YT labels this "buffering".
     Cued = 5  # YT labels this "video cued". Seen before state "Starting"
     Advertisement = 1081
+    AdSkipped = 1082  # Fires when an ad is skipped manually
 
     @staticmethod
     def parse(state: str) -> "State":
