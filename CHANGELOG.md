@@ -1,3 +1,13 @@
+# 3.5.0
+
+### Added
+
+- Generate unique device ID for each connection to allow simultaneous connections (@GlintsCraft) 
+
+### Fixed
+
+- Fixed `store_auth_state()` (reported by @nahuelseoane)
+
 # 3.4.0
 
 ### Breaking changes
