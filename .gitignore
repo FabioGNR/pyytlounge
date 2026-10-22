@@ -2,6 +2,6 @@
 __pycache__
 .mypy_cache/
 dist/
-auth_state
+auth_state*
 docs/_build
 docs/generated
