@@ -23,7 +23,7 @@ from .events import (
     PlaybackSpeedEvent,
     DisconnectedEvent,
 )
-from .models import AuthState, DpadCommand, BLACKLISTED_CLIENTS
+from .models import AuthState, AuthStateData, DpadCommand, BLACKLISTED_CLIENTS
 from .lounge_models import _Device, _DeviceInfo, _LoungeStatus
 from .exceptions import (
     NotConnectedException,
@@ -179,14 +179,9 @@ class YtLoungeApi:
                 self._logger.exception("Refresh auth failed")
                 raise
 
-    def store_auth_state(self) -> dict:
+    def store_auth_state(self) -> AuthStateData:
         """Return auth parameters as dict which can be serialized for later use"""
-        return {
-            "screenId": self.auth.screen_id,
-            "lounge_id_token": self.auth.lounge_id_token,
-            "refresh_token": self.auth.refresh_token,
-            "deviceId": self.auth.device_id,
-        }
+        return self.auth.serialize()
 
     def load_auth_state(self, data: dict):
         """Use deserialized auth parameters"""
