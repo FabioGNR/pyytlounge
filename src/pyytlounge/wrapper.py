@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 from typing import Any, AsyncIterator, Dict, List, Optional
-import uuid
 
 import aiohttp
 from aiohttp import ClientTimeout, ClientPayloadError
@@ -43,17 +42,14 @@ class YtLoungeApi:
         device_name: str,
         event_listener: Optional[EventListener] = None,
         logger: Optional[logging.Logger] = None,
-        device_id: Optional[str] = None,
     ):
         """Create an instance of the API which can connect to a single screen
 
         :param device_name: This name will show up on the screen
         :param event_listener: Setting a listener allows you to receive updates from the screen
         :param logger: Override the logger with something custom
-        :param device_id: Unique identifier (UUID) for the remote control client. A random UUID is generated if not provided.
         """
         self.device_name = device_name
-        self.device_id = device_id or str(uuid.uuid4())
         self.auth = AuthState()
         self._sid = None
         self._gsession = None
@@ -189,6 +185,7 @@ class YtLoungeApi:
             "screenId": self.auth.screen_id,
             "lounge_id_token": self.auth.lounge_id_token,
             "refresh_token": self.auth.refresh_token,
+            "deviceId": self.auth.device_id,
         }
 
     def load_auth_state(self, data: dict):
@@ -309,7 +306,7 @@ class YtLoungeApi:
             "app": "web",
             "mdx-version": "3",
             "name": self.device_name,
-            "id": self.device_id,
+            "id": self.auth.device_id,
             "device": "REMOTE_CONTROL",
             "capabilities": "que,dsdtr,atp,vsp",
             "magnaKey": "cloudPairedDevice",

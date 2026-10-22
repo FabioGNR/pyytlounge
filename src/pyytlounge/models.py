@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 from typing import TypedDict, cast
+import uuid
 
 
 _logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ class AuthStateData(TypedDict):
     loungeIdToken: str
     refreshToken: str
     expiry: int
+    deviceId: str
 
 
 @dataclass
@@ -53,6 +55,7 @@ class AuthState:
     lounge_id_token: str
     refresh_token: str
     expiry: int
+    device_id: str
 
     def __init__(self):
         super().__init__()
@@ -61,6 +64,7 @@ class AuthState:
         self.lounge_id_token = None
         self.refresh_token = None
         self.expiry = None
+        self.device_id = str(uuid.uuid4())
 
     def serialize(self) -> AuthStateData:
         """Serializes the current state into a dictionary."""
@@ -70,6 +74,7 @@ class AuthState:
             loungeIdToken=self.lounge_id_token,
             refreshToken=self.refresh_token,
             expiry=self.expiry,
+            deviceId=self.device_id
         )
 
     def deserialize(self, data: dict):
@@ -81,6 +86,7 @@ class AuthState:
             self.lounge_id_token = v1_data["loungeIdToken"]
             self.refresh_token = v1_data["refreshToken"]
             self.expiry = v1_data["expiry"]
+            self.device_id = v1_data.get("deviceId", self.screen_id)  # Fallback for older versions
         else:
             raise ValueError("Unknown authentication data version")
 
