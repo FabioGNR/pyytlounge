@@ -301,7 +301,7 @@ class YtLoungeApi:
             "app": "web",
             "mdx-version": "3",
             "name": self.device_name,
-            "id": self.auth.screen_id,
+            "id": self.auth.device_id,
             "device": "REMOTE_CONTROL",
             "capabilities": "que,dsdtr,atp,vsp",
             "magnaKey": "cloudPairedDevice",
