@@ -10,3 +10,8 @@ async def test_event_loungeStatus(api: YtLoungeApi, device: Device):
 
     assert api._screen_name == device.expectations["screen_name"]
     assert api._device_info == device.expectations["device_info"]
+
+
+async def test_event_subtitles_track_changed_without_args(api: YtLoungeApi):
+    # Some receivers (e.g. SmartTube) send this event without arguments
+    await api._process_event("onSubtitlesTrackChanged", [])
