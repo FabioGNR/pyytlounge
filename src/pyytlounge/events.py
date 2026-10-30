@@ -95,7 +95,7 @@ class SubtitlesTrackEvent:
     """Contains information related to subtitles track"""
 
     def __init__(self, data: _SubtitlesTrackData):
-        self.video_id: str = data["videoId"]
+        self.video_id: Optional[str] = data.get("videoId", None)
         self.track_name: Optional[str] = data.get("trackName", None)
         self.language_code: Optional[str] = data.get("languageCode", None)
         self.source_language_code: Optional[str] = data.get("sourceLanguageCode", None)
@@ -122,6 +122,6 @@ class PlaybackSpeedEvent:
 
 class DisconnectedEvent:
     """Contains information related to disconnection"""
-    
+
     def __init__(self, data: Optional[_DisconnectedData]):
         self.reason: Optional[str] = data.get("reason", None) if data else None
