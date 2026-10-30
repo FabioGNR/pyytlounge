@@ -1,3 +1,13 @@
+# 3.6.0
+
+### Breaking changes
+
+- Video ID is now optional in SubtitlesTrackEvent as some 3rd party clients do not send it
+
+### Fixed
+
+- Fix event processing for SmartTube: Ignore empty SubtitlesTrackEvent (@TheeCoderAhmed)
+
 # 3.5.0
 
 ### Added
